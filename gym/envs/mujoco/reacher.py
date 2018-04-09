@@ -41,3 +41,18 @@ class ReacherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             self.sim.data.qvel.flat[:2],
             self.get_body_com("fingertip") - self.get_body_com("target")
         ])
+
+    def render(self, mode='human'):
+        if mode == 'rgb_array':
+            #self._get_viewer().render()
+            # window size used for old mujoco-py:
+            width, height = 500, 500
+            data = self.sim.render(height, width, camera_name='camera')
+
+            #data = self._get_viewer().read_pixels(width, height, depth=False)
+            # original image is upside-down, so flip it
+            return data[::-1, :, :]
+        elif mode == 'human':
+            width, height = 500, 500
+            self.sim.render(height, width, camera_name='camera')
+            #self.sim.render()
