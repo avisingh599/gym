@@ -296,7 +296,14 @@ register(
 register(
     id='ReacherVision-v0',
     entry_point='gym.envs.mujoco:ReacherVisionEnv',
-    max_episode_steps=500,#TODO
+    max_episode_steps=50,#TODO
+    reward_threshold=0.0,#TODO
+)
+
+register(
+    id='PusherVision-v0',
+    entry_point='gym.envs.mujoco:PusherVisionEnv',
+    max_episode_steps=100,#TODO
     reward_threshold=0.0,#TODO
 )
 
