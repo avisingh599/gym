@@ -314,6 +314,12 @@ register(
     reward_threshold=0.0,#TODO
 )
 
+register(
+    id='ReacherVisionOnly-v0',
+    entry_point='gym.envs.mujoco:ReacherVisionOnlyEnv',
+    max_episode_steps=100,#TODO
+    reward_threshold=0.0,#TODO
+)
 # Robotics
 # ----------------------------------------
 
