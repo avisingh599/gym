@@ -202,6 +202,12 @@ register(
 # ----------------------------------------
 
 # 2D
+register(
+    id='ReacherDiscreteNoVelocityFixedGoalEnv-v2',
+    entry_point='gym.envs.mujoco:ReacherDiscreteNoVelocityFixedGoalEnv',
+    max_episode_steps=50,
+    reward_threshold=-3.75,
+)
 
 register(
     id='ReacherNoVelocityFixedGoalEnv-v2',

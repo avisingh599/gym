@@ -19,3 +19,4 @@ from gym.envs.mujoco.pusher_vision import PusherVisionEnv
 
 from gym.envs.mujoco.reacher_no_velocity_fixed_goal import ReacherNoVelocityFixedGoalEnv
 from gym.envs.mujoco.reacher_vision_only import ReacherVisionOnlyEnv
+from gym.envs.mujoco.reacher_discrete_no_velocity_fixed_goal import ReacherDiscreteNoVelocityFixedGoalEnv
