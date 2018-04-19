@@ -16,7 +16,10 @@ from gym.envs.mujoco.thrower import ThrowerEnv
 from gym.envs.mujoco.striker import StrikerEnv
 from gym.envs.mujoco.reacher_vision import ReacherVisionEnv
 from gym.envs.mujoco.pusher_vision import PusherVisionEnv
+from gym.envs.mujoco.pusher_1Dvision import Pusher1DVisionEnv
 
 from gym.envs.mujoco.reacher_no_velocity_fixed_goal import ReacherNoVelocityFixedGoalEnv
 from gym.envs.mujoco.reacher_vision_only import ReacherVisionOnlyEnv
 from gym.envs.mujoco.reacher_discrete_no_velocity_fixed_goal import ReacherDiscreteNoVelocityFixedGoalEnv
+
+from gym.envs.mujoco.pusher_discrete import PusherDiscreteEnv

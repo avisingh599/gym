@@ -11,21 +11,36 @@ class ReacherDiscreteNoVelocityFixedGoalEnv(mujoco_env.MujocoEnv, utils.EzPickle
         
         assert(num_bins >=2)
 
-        bounds = self.model.actuator_ctrlrange.copy()
-        action_ranges = [
-            np.linspace(bounds[i, 0], bounds[i, 1], num_bins)
-            for i in range(bounds.shape[0])
-        ]
-        self.idx_to_continuous_action = [
-            np.array(x) for x in itertools.product(*action_ranges)
-        ]
+        bounds = 0.01*self.model.actuator_ctrlrange.copy()
 
+        # action_ranges = [
+        #     np.linspace(bounds[i, 0], bounds[i, 1], num_bins)
+        #     for i in range(bounds.shape[0])
+        # ]
+        # self.idx_to_continuous_action = [
+        #     np.array(x) for x in itertools.product(*action_ranges)
+        # ]
+
+        num_joints = bounds.shape[0]
+        num_bins = 2
+        action_list = []
+        for i in range(bounds.shape[0]): 
+            for j in range(2):
+                act = np.zeros((num_joints,))
+                act[j] = bounds[i, j]
+                action_list.append(act)
+
+        self.idx_to_continuous_action = action_list
         self.action_space = spaces.Discrete(len(self.idx_to_continuous_action))
+
+
 
     def step(self, a):
         vec = self.get_body_com("fingertip")-self.get_body_com("target")
         reward_dist = - np.linalg.norm(vec)
-        reward_ctrl = - np.square(a).sum()
+        #reward_ctrl = - np.square(a).sum()
+        reward_ctrl = 0.0
+
         reward = reward_dist + reward_ctrl
         
         continuous_action = self.idx_to_continuous_action[a]

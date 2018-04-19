@@ -205,7 +205,7 @@ register(
 register(
     id='ReacherDiscreteNoVelocityFixedGoalEnv-v2',
     entry_point='gym.envs.mujoco:ReacherDiscreteNoVelocityFixedGoalEnv',
-    max_episode_steps=50,
+    max_episode_steps=250,
     reward_threshold=-3.75,
 )
 
@@ -229,6 +229,14 @@ register(
     max_episode_steps=100,
     reward_threshold=0.0,
 )
+
+register(
+    id='PusherDiscrete-v2',
+    entry_point='gym.envs.mujoco:PusherDiscreteEnv',
+    max_episode_steps=500,
+    reward_threshold=0.0,
+)
+
 
 register(
     id='Thrower-v2',
@@ -316,6 +324,13 @@ register(
 register(
     id='PusherVision-v0',
     entry_point='gym.envs.mujoco:PusherVisionEnv',
+    max_episode_steps=100,#TODO
+    reward_threshold=0.0,#TODO
+)
+
+register(
+    id='Pusher1DVision-v0',
+    entry_point='gym.envs.mujoco:Pusher1DVisionEnv',
     max_episode_steps=100,#TODO
     reward_threshold=0.0,#TODO
 )
