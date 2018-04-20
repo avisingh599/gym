@@ -3,8 +3,9 @@ from gym import utils
 from gym.envs.mujoco import mujoco_env
 
 import mujoco_py
+import cv2
 
-class PusherVisionEnv(mujoco_env.MujocoEnv, utils.EzPickle):
+class PusherVisionTinyEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self):
         utils.EzPickle.__init__(self)
         mujoco_env.MujocoEnv.__init__(self, 'pusher.xml', 5)
@@ -49,11 +50,19 @@ class PusherVisionEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def _get_obs(self):
         rgb = self.sim.render(64, 64, camera_name='camera')
+        rgb_small = cv2.resize(rgb, (12, 12))
+        #rgb_tiny = cv2.resize(rgb, (8, 8))
+        #from scipy.misc import imshow
+        #import IPython; IPython.embed()
 
         return np.concatenate([
-            rgb.flat[:]/255.0,
+            rgb_small.flat[:]/255.0,
             self.sim.data.qpos.flat[:7],
             self.sim.data.qvel.flat[:7],
             self.get_body_com("tips_arm"),
             self.get_body_com("goal"),
         ])
+
+if __name__ == "__main__": 
+   env = PusherVisionTinyEnv()
+   img = env.reset_model()

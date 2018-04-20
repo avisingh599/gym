@@ -322,8 +322,15 @@ register(
 )
 
 register(
-    id='PusherVision-v0',
-    entry_point='gym.envs.mujoco:PusherVisionEnv',
+    id='PusherVisionTiny-v0',
+    entry_point='gym.envs.mujoco:PusherVisionTinyEnv',
+    max_episode_steps=100,#TODO
+    reward_threshold=0.0,#TODO
+)
+
+register(
+    id='PusherBlind-v0',
+    entry_point='gym.envs.mujoco:PusherBlindEnv',
     max_episode_steps=100,#TODO
     reward_threshold=0.0,#TODO
 )
