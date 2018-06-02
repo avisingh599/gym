@@ -42,3 +42,12 @@ class TimeLimit(Wrapper):
         self._episode_started_at = time.time()
         self._elapsed_steps = 0
         return self.env.reset()
+
+    def get_image(self):
+        return self.env.get_image()
+
+    def next(self):
+        self.env.next()
+
+    def next_object(self):
+        self.env.next_object()

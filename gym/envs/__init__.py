@@ -225,6 +225,34 @@ register(
 
 
 register(
+    id='SimpleReacher-v1',
+    entry_point='gym.envs.mujoco:SimpleReacherEnv',
+    max_episode_steps=50,
+    reward_threshold=-3.75,
+)
+
+register(
+    id='SimpleReacher-v2',
+    entry_point='gym.envs.mujoco:SimpleReacherEnvV2',
+    max_episode_steps=50,
+    reward_threshold=-3.75,
+)
+
+register(
+    id='MultiReacher-v1',
+    entry_point='gym.envs.mujoco:MultiReacherEnv',
+    max_episode_steps=50,
+    reward_threshold=-3.75,
+)
+
+register(
+    id='MultiReacher-v2',
+    entry_point='gym.envs.mujoco:MultiReacherEnvV2',
+    max_episode_steps=50,
+    reward_threshold=-3.75,
+)
+
+register(
     id='Pusher-v2',
     entry_point='gym.envs.mujoco:PusherEnv',
     max_episode_steps=100,
