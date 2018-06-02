@@ -4,9 +4,33 @@ from gym.envs.mujoco import mujoco_env
 
 import mujoco_py
 
-class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
+import sys
+sys.path.insert(0,'../baselines/baselines/autoencoder')
+from train import AutoEncoderNetwork
+import tensorflow as tf
+import cv2
+
+class PusherVisionAutoEncoderEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self):
         utils.EzPickle.__init__(self)
+
+        #cnn params
+        arch = 'cnn'
+        n_filters = [64, 32, 16]
+        strides = [2, 1, 1]
+        i_dim = [64, 64, 3]
+        recon_dim = [32, 32, 3]
+        decoder_layers = [200, 100, 50]
+
+        #chkpt_file = '../baselines/ae_checkpoints/2018-05-29_15-57-56_mjc150_dropout_bn_cnn_filters_64_32_16_/weights_050000.pkl'
+        chkpt_file = '../baselines/ae_checkpoints/2018-05-29_19-01-16_cv2_mjc150_dropout_bn_cnn_filters_64_32_16_/weights_050000.pkl'
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        self.sess = tf.Session(config=config)
+
+        self.img_model = AutoEncoderNetwork(arch, i_dim, recon_dim, n_filters, strides, decoder_layers)
+        self.img_model.load_wt(self.sess, chkpt_file)
+
         mujoco_env.MujocoEnv.__init__(self, 'pusher.xml', 5)
 
     def step(self, a):
@@ -16,7 +40,8 @@ class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         reward_near = - np.linalg.norm(vec_1)
         reward_dist = - np.linalg.norm(vec_2)
         reward_ctrl = - np.square(a).sum()
-        reward = reward_dist + 0.1 * reward_ctrl + 0.5 * reward_near
+        #reward = reward_dist + 0.1 * reward_ctrl + 0.5 * reward_near
+        reward = reward_dist + 0.0 * reward_ctrl + 0.2 * reward_near
 
         self.do_simulation(a, self.frame_skip)
         ob = self._get_obs()
@@ -51,22 +76,27 @@ class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         return self._get_obs()
 
     def _get_obs(self):
+        #rgb = self.sim.render(64, 64, camera_name='camera')
+        rgb = self.sim.render(256, 256, camera_name='camera')
+        #import IPython; IPython.embed()
+        rgb = cv2.resize(rgb, (64, 64), interpolation=cv2.INTER_AREA)
+        rgb = rgb/255.0
+
+        feed_dict = {
+            self.img_model.i : np.expand_dims(rgb, axis=0),
+            self.img_model.is_train: False,
+        }
+        
+        img_feats = self.sess.run(self.img_model.feats, feed_dict=feed_dict) 
+
         return np.concatenate([
+            img_feats[0],
             self.sim.data.qpos.flat[:7],
             self.sim.data.qvel.flat[:7],
             self.get_body_com("tips_arm"),
-            self.get_body_com("object"),
             self.get_body_com("goal"),
         ])
 
-    def log_diagnostics(self, paths,**kwargs):
-        pass
-        # rew_dist = np.array([traj['env_infos']['reward_dist'] for traj in paths])
-        # rew_ctrl = np.array([traj['env_infos']['reward_ctrl'] for traj in paths])
-
-        # logger.record_tabular('AvgObjectToGoalDist', -np.mean(rew_dist.mean()))
-        # logger.record_tabular('AvgControlCost', -np.mean(rew_ctrl.mean()))
-        # logger.record_tabular('AvgMinObjToGoalDist', np.mean(np.min(-rew_dist, axis=1)))
-        # logger.record_tabular('AvgFinalObjToGoalDist', -np.mean(rew_dist[:,-1]))
-        # logger.record_tabular('PctInGoal', 100*np.mean(np.any(rew_dist > -0.17,axis=1)))
-        # logger.record_tabular('MinMinObjToGoalDist', np.min(-rew_dist))
+if __name__ == "__main__":
+    env = PusherVisionAutoEncoderEnv()
+    ob = env.reset()

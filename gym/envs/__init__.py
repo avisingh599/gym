@@ -223,6 +223,7 @@ register(
     reward_threshold=-3.75,
 )
 
+
 register(
     id='Pusher-v2',
     entry_point='gym.envs.mujoco:PusherEnv',
@@ -324,6 +325,20 @@ register(
 register(
     id='PusherVisionTiny-v0',
     entry_point='gym.envs.mujoco:PusherVisionTinyEnv',
+    max_episode_steps=100,#TODO
+    reward_threshold=0.0,#TODO
+)
+
+register(
+    id='PusherVision-v0',
+    entry_point='gym.envs.mujoco:PusherVisionEnv',
+    max_episode_steps=100,#TODO
+    reward_threshold=0.0,#TODO
+)
+
+register(
+    id='PusherVisionAutoEncoder-v0',
+    entry_point='gym.envs.mujoco:PusherVisionAutoEncoderEnv',
     max_episode_steps=100,#TODO
     reward_threshold=0.0,#TODO
 )

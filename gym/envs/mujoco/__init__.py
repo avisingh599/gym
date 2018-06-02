@@ -18,11 +18,17 @@ from gym.envs.mujoco.reacher_vision import ReacherVisionEnv
 from gym.envs.mujoco.pusher_vision import PusherVisionEnv
 from gym.envs.mujoco.pusher_blind import PusherBlindEnv
 
+#1D vision, small res stuff
 from gym.envs.mujoco.pusher_1Dvision import Pusher1DVisionEnv
 from gym.envs.mujoco.pusher_vision_tiny import PusherVisionTinyEnv
 
+#reacher stuff
 from gym.envs.mujoco.reacher_no_velocity_fixed_goal import ReacherNoVelocityFixedGoalEnv
 from gym.envs.mujoco.reacher_vision_only import ReacherVisionOnlyEnv
 from gym.envs.mujoco.reacher_discrete_no_velocity_fixed_goal import ReacherDiscreteNoVelocityFixedGoalEnv
 
+#discretization
 from gym.envs.mujoco.pusher_discrete import PusherDiscreteEnv
+
+#autoenc envs
+from gym.envs.mujoco.pusher_vision_autoencoder import PusherVisionAutoEncoderEnv

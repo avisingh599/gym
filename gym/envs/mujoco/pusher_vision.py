@@ -3,6 +3,7 @@ from gym import utils
 from gym.envs.mujoco import mujoco_env
 
 import mujoco_py
+import cv2
 
 class PusherVisionEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self):
@@ -48,10 +49,13 @@ class PusherVisionEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         return self._get_obs()
 
     def _get_obs(self):
-        rgb = self.sim.render(64, 64, camera_name='camera')
+        rgb = self.sim.render(256, 256, camera_name='camera')
+        #import IPython; IPython.embed()
+        rgb = cv2.resize(rgb, (64, 64), interpolation=cv2.INTER_AREA)
+        rgb = rgb/255.0
 
         return np.concatenate([
-            rgb.flat[:]/255.0,
+            rgb.flat[:],
             self.sim.data.qpos.flat[:7],
             self.sim.data.qvel.flat[:7],
             self.get_body_com("tips_arm"),
