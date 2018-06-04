@@ -58,15 +58,3 @@ class PusherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             self.get_body_com("object"),
             self.get_body_com("goal"),
         ])
-
-    def log_diagnostics(self, paths,**kwargs):
-        pass
-        # rew_dist = np.array([traj['env_infos']['reward_dist'] for traj in paths])
-        # rew_ctrl = np.array([traj['env_infos']['reward_ctrl'] for traj in paths])
-
-        # logger.record_tabular('AvgObjectToGoalDist', -np.mean(rew_dist.mean()))
-        # logger.record_tabular('AvgControlCost', -np.mean(rew_ctrl.mean()))
-        # logger.record_tabular('AvgMinObjToGoalDist', np.mean(np.min(-rew_dist, axis=1)))
-        # logger.record_tabular('AvgFinalObjToGoalDist', -np.mean(rew_dist[:,-1]))
-        # logger.record_tabular('PctInGoal', 100*np.mean(np.any(rew_dist > -0.17,axis=1)))
-        # logger.record_tabular('MinMinObjToGoalDist', np.min(-rew_dist))

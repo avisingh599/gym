@@ -5,8 +5,8 @@ from gym.envs.mujoco import mujoco_env
 import mujoco_py
 
 import sys
-sys.path.insert(0,'../baselines/baselines/autoencoder')
-from train import AutoEncoderNetwork
+#sys.path.insert(0,'../baselines/baselines/autoencoder')
+from gym.autoencoder.train import AutoEncoderNetwork
 import tensorflow as tf
 import cv2
 

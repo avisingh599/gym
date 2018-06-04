@@ -37,4 +37,4 @@ from gym.envs.mujoco.simple_reacher import SimpleReacherEnv
 from gym.envs.mujoco.simple_reacher_v2 import SimpleReacherEnvV2
 from gym.envs.mujoco.multi_reacher import MultiReacherEnv
 from gym.envs.mujoco.multi_reacher_v2 import MultiReacherEnvV2
-from gym.envs.mujoco.simple_pusher import SimplePusherEnv
+#from gym.envs.mujoco.simple_pusher import SimplePusherEnv
