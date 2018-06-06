@@ -1,7 +1,7 @@
 from gym.envs.mujoco.dynamic_mjc.model_builder import MJCModel
 import numpy as np
 
-def Rope(num_beads = 5):
+def rope(num_beads = 5):
     mjcmodel = MJCModel('rope')
     mjcmodel.root.compiler(inertiafromgeom="auto",angle="radian",coordinate="local", eulerseq="XYZ")
     mjcmodel.root.size(njmax=6000, nconmax=6000)

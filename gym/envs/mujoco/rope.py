@@ -3,7 +3,7 @@ from gym import utils
 from gym.envs.mujoco import mujoco_env
 from gym import error, spaces
 
-from gym.envs.mujoco.dynamic_mjc.rope import Rope
+from gym.envs.mujoco.dynamic_mjc.rope import rope
 
 import mujoco_py
 
@@ -31,7 +31,7 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.video_w = video_w
         self.camera_name = camera_name
 
-        model = Rope(num_beads=self.num_beads)
+        model = rope(num_beads=self.num_beads)
         with model.asfile() as f:
             mujoco_env.MujocoEnv.__init__(self, f.name, 5)
         

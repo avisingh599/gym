@@ -36,3 +36,6 @@ tutorial/*.html
 # PyCharm project files
 .idea
 vizdoom.ini
+
+gym/envs/mujoco/assets/testing3
+gym/envs/mujoco/assets/reaching3

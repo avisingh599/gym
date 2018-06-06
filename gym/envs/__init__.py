@@ -253,6 +253,13 @@ register(
 )
 
 register(
+    id='Rope-v0',
+    entry_point='gym.envs.mujoco:RopeEnv',
+    max_episode_steps=10,
+    reward_threshold=0.8, #TODO
+)
+
+register(
     id='Pusher-v2',
     entry_point='gym.envs.mujoco:PusherEnv',
     max_episode_steps=100,
