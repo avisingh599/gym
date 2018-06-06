@@ -255,8 +255,17 @@ register(
 register(
     id='Rope-v0',
     entry_point='gym.envs.mujoco:RopeEnv',
-    max_episode_steps=10,
+    max_episode_steps=5,
     reward_threshold=0.8, #TODO
+)
+
+register(
+    id='RopeVideo-v0',
+    entry_point='gym.envs.mujoco:RopeEnv',
+    kwargs={'log_video' : True},
+    max_episode_steps=5,
+    reward_threshold=0.8, #TODO
+
 )
 
 register(

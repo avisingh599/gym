@@ -35,46 +35,47 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         with model.asfile() as f:
             mujoco_env.MujocoEnv.__init__(self, f.name, 5)
         
-        low = np.asarray(4*[-0.5])
-        high = np.asarray(4*[0.5])
+        low = np.asarray(4*[-0.4])
+        high = np.asarray(4*[0.4])
         self.action_space = spaces.Box(low=low, high=high, dtype=np.float32)
         
-        #import IPython; IPython.embed()
+        #when using xmls        
         #mujoco_env.MujocoEnv.__init__(self, 'rope.xml', 5)
 
     def step(self, a):
-        #vec_1 = self.get_body_com("object") - self.get_body_com("tips_arm")
-        #vec_2 = self.get_body_com("object") - self.get_body_com("goal")
 
-        # reward_near = - np.linalg.norm(vec_1)
-        # reward_dist = - np.linalg.norm(vec_2)
-        # reward_ctrl = - np.square(a).sum()
-        # reward = reward_dist + 0.1 * reward_ctrl + 0.5 * reward_near
-        
+        #make string horizontal rewards
         first_bead = self.get_body_com("bead_0")[:2]
         last_bead = self.get_body_com("bead_{}".format(self.num_beads-1))[:2]
-        
         vec_1 = first_bead - last_bead
         vec_2 = np.asarray([1.0, 0.0]) #horizontal line
-
         cosine = np.dot(vec_1, vec_2)/(np.linalg.norm(vec_1) + 1e-10)
         abs_cos = np.abs(cosine)
-        reward = abs_cos
+        
+        #compute action penalty
+        #act_dim = self.action_space.shape[0]
+        movement_1 = -1.0*np.linalg.norm(self.sim.data.qpos[:2] - a[:2])
+        movement_2 =  -1.0*np.linalg.norm(a[:2] - a[2:])
+        action_penalty = movement_1 + movement_2
+
+        reward = abs_cos + 0.01*action_penalty
 
         #import IPython; IPython.embed()
         #enquire the qpos here, and then do the interpolation thing
         #self.do_simulation(a, self.frame_skip)
         #video_frames = self.do_pos_simulation_with_substeps(a)
         
-        video_frames = self.pick_place(a)
+        #video_frames = self.pick_place(a)
+        video_frames = self.push(a)
+
         ob = self._get_obs()
         done = False
         is_success = False #TODO maybe fix this at some point
 
-        # if reward_dist > -0.17:
-        #     is_success = True
+        if abs_cos > 0.9:
+            is_success = True
 
-        return ob, reward, done, dict(is_success=is_success, video_frames=video_frames)
+        return ob, reward, done, dict(is_success=is_success, video_frames=video_frames, action_penalty=action_penalty)
 
     def pick_place(self, a):
         x_start = a[0]
@@ -108,6 +109,38 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         return video_frames
 
+    def push(self, a):
+        x_start = a[0]
+        y_start = a[1]
+        x_end = a[2]
+        y_end = a[3]
+
+        x_neutral = 0.0
+        y_neutral = -0.2
+        z_min = -0.1
+        z_max = +0.05
+        torque_max = +10.0
+        torque_neutral = 0.0
+        torque_min = -1*torque_max
+
+        actions = np.asarray(
+               [[x_neutral, y_neutral, z_max, 0.0, torque_max], #neutral position
+                [x_start, y_start, z_max, 0.0, torque_neutral], #get close
+                [x_start, y_start, z_min, 0.0, torque_neutral], #go down
+                #[x_start, y_start, z_min, 0.0, torque_neutral], #grasp
+                #[x_start, x_start, z_max,  0.0, torque_neutral], #go up
+                [x_end,y_end,z_min,0.0,torque_neutral], #move
+                #[x_end,y_end, z_min, 0.0, torque_neutral], #go down
+                #[x_end,y_end, z_min, 0.0, torque_neutral], #drop 
+                [x_end,y_end, z_max, 0.0, torque_neutral], #go back up 
+                [x_neutral, y_neutral, z_max, 0.0, torque_max],#neutral position, open gripper
+                ])
+
+        video_frames = []
+        for i in range(actions.shape[0]):
+            video_frames.append(self.do_pos_simulation_with_substeps(actions[i]))
+
+        return video_frames
 
     def do_pos_simulation_with_substeps(self, a):
         qpos_curr = self.sim.data.qpos[:self.action_space.shape[0]]
@@ -125,7 +158,7 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             self.sim.data.ctrl[-1] = a[-1]
             self.sim.step()
             if i%self.video_substeps == 0 and self.log_video :
-                video_frames[int(i/self.video_substeps)] = env.sim.render(self.video_h, self.video_w, camera_name=self.camera_name)
+                video_frames[int(i/self.video_substeps)] = self.sim.render(self.video_h, self.video_w, camera_name=self.camera_name)
 
         return video_frames
 
