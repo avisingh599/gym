@@ -11,7 +11,6 @@ class GraspEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         mujoco_env.MujocoEnv.__init__(self, 'cartgripper_grasp.xml', 1)
 
 
-
     def step(self, a):
         #vec_1 = self.get_body_com("object") - self.get_body_com("tips_arm")
         #vec_2 = self.get_body_com("object") - self.get_body_com("goal")
@@ -24,7 +23,7 @@ class GraspEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         #import IPython; IPython.embed()
         #enquire the qpos here, and then do the interpolation thing
 
-        _ = self.do_pos_simulation_with_substeps(a)
+        self.do_pos_simulation_with_substeps(a)
         
         ob = self._get_obs()
         done = False

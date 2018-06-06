@@ -57,43 +57,43 @@
             <joint type="free"/>
             <geom type="box" size="0.015 0.03 0.015" rgba="0.8 0.2 0.2 1" mass="0.03" contype="7" conaffinity="7" friction="1.0 0.10 0.002" condim="6" solimp="0.99 0.99 0.01" solref="0.01 1"/>
             <site name="obj2_end1" pos="0.0 -0.0 0.015" type="sphere" size="0.01"/>
-            <site name="obj2_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
-        </body>
+<!--             <site name="obj2_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
+ -->        </body>
 
         <body name="object_3" pos="0.0 0.14 0">
             <joint type="free"/>
             <geom type="box" size="0.015 0.03 0.015" rgba="0.8 0.2 0.2 1" mass="0.03" contype="7" conaffinity="7" friction="1.0 0.10 0.002" condim="6" solimp="0.99 0.99 0.01" solref="0.01 1"/>
             <site name="obj3_end1" pos="0.0 -0.0 0.015" type="sphere" size="0.01"/>
-            <site name="obj3_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
-        </body>
+<!--             <site name="obj3_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
+ -->        </body>
 
         <body name="object_4" pos="0.0 0.21 0">
             <joint type="free"/>
             <geom type="box" size="0.015 0.03 0.015" rgba="0.8 0.2 0.2 1" mass="0.03" contype="7" conaffinity="7" friction="1.0 0.10 0.002" condim="6" solimp="0.99 0.99 0.01" solref="0.01 1"/>
             <site name="obj4_end1" pos="0.0 -0.0 0.015" type="sphere" size="0.01"/>
-            <site name="obj4_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
-        </body>
+<!--             <site name="obj4_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
+ -->        </body>
 
         <body name="object_5" pos="0.0 0.28 0">
             <joint type="free"/>
             <geom type="box" size="0.015 0.03 0.015" rgba="0.8 0.2 0.2 1" mass="0.03" contype="7" conaffinity="7" friction="1.0 0.10 0.002" condim="6" solimp="0.99 0.99 0.01" solref="0.01 1"/>
             <site name="obj5_end1" pos="0.0 -0.0 0.015" type="sphere" size="0.01"/>
-            <site name="obj5_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
-        </body>
+<!--             <site name="obj5_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
+ -->        </body>
 
         <body name="object_6" pos="0.0 0.35 0">
             <joint type="free"/>
             <geom type="box" size="0.015 0.03 0.015" rgba="0.8 0.2 0.2 1" mass="0.03" contype="7" conaffinity="7" friction="1.0 0.10 0.002" condim="6" solimp="0.99 0.99 0.01" solref="0.01 1"/>
             <site name="obj6_end1" pos="0.0 -0.0 0.015" type="sphere" size="0.01"/>
-            <site name="obj6_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
-        </body>
+<!--             <site name="obj6_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
+ -->        </body>
 
         <body name="object_7" pos="0.0 0.42 0">
             <joint type="free"/>
             <geom type="box" size="0.015 0.03 0.015" rgba="0.8 0.2 0.2 1" mass="0.03" contype="7" conaffinity="7" friction="1.0 0.10 0.002" condim="6" solimp="0.99 0.99 0.01" solref="0.01 1"/>
             <site name="obj7_end1" pos="0.0 -0.0 0.015" type="sphere" size="0.01"/>
-            <site name="obj7_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
-        </body>
+<!--             <site name="obj7_end2" pos="0.0 0.0 0.015" type="sphere" size="0.01"/>
+ -->        </body>
 
         <body name="container" pos="0  0  -0.05">
 
@@ -129,28 +129,35 @@
                 <site site="obj1_end1"/>
                 <site site="obj2_end1"/>
             </spatial>
-        </tendon>
 
-        <tendon>
             <spatial limited="true" range="0.00 0.05" width="0.005">
-                <site site="obj2_end2"/>
+                <site site="obj2_end1"/>
                 <site site="obj3_end1"/>
             </spatial>
-        </tendon>
-
-        <tendon>
+            
             <spatial limited="true" range="0.00 0.05" width="0.005">
-                <site site="obj3_end2"/>
+                <site site="obj3_end1"/>
                 <site site="obj4_end1"/>
             </spatial>
+
+            <spatial limited="true" range="0.00 0.05" width="0.005">
+                <site site="obj4_end1"/>
+                <site site="obj5_end1"/>
+            </spatial>
+            
+        </tendon>
+<!-- 
+        <tendon>
+
+        </tendon>
+ -->
+<!--         <tendon>
+
         </tendon>
 
         <tendon>
-            <spatial limited="true" range="0.00 0.05" width="0.005">
-                <site site="obj4_end2"/>
-                <site site="obj5_end1"/>
-            </spatial>
-        </tendon>
+
+        </tendon> -->
 
 <!--         <tendon>
             <spatial limited="true" range="0.00 0.05" width="0.005">
