@@ -15,7 +15,9 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                  video_substeps = 5, 
                  video_h=500, 
                  video_w=500,
-                 camera_name='overheadcam'):
+                 camera_name='overheadcam',
+                 sparse=True,
+                 action_penalty_const=1e-2,):
         utils.EzPickle.__init__(self)
         
         #sim params
@@ -23,6 +25,10 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         
         #env params
         self.num_beads = num_beads
+
+        #reward params
+        self.sparse = sparse
+        self.action_penalty_const = action_penalty_const
 
         #video params
         self.log_video = log_video
@@ -58,7 +64,15 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         movement_2 =  -1.0*np.linalg.norm(a[:2] - a[2:])
         action_penalty = movement_1 + movement_2
 
-        reward = abs_cos + 0.01*action_penalty
+        if self.sparse:
+            if abs_cos > 0.9:
+                main_rew = 1.0
+            else:
+                main_rew = 0.0
+        else:
+            main_rew = abs_cos 
+
+        reward = main_rew + self.action_penalty_const*action_penalty
 
         #import IPython; IPython.embed()
         #enquire the qpos here, and then do the interpolation thing
@@ -124,16 +138,13 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         torque_min = -1*torque_max
 
         actions = np.asarray(
-               [[x_neutral, y_neutral, z_max, 0.0, torque_max], #neutral position
-                [x_start, y_start, z_max, 0.0, torque_neutral], #get close
+               [
+                # [x_neutral, y_neutral, z_max, 0.0, torque_max], #neutral position
+                [x_start, y_start, z_max, 0.0, torque_max], #get close, close gripper
                 [x_start, y_start, z_min, 0.0, torque_neutral], #go down
-                #[x_start, y_start, z_min, 0.0, torque_neutral], #grasp
-                #[x_start, x_start, z_max,  0.0, torque_neutral], #go up
                 [x_end,y_end,z_min,0.0,torque_neutral], #move
-                #[x_end,y_end, z_min, 0.0, torque_neutral], #go down
-                #[x_end,y_end, z_min, 0.0, torque_neutral], #drop 
-                [x_end,y_end, z_max, 0.0, torque_neutral], #go back up 
-                [x_neutral, y_neutral, z_max, 0.0, torque_max],#neutral position, open gripper
+                [x_end,y_end, z_max, 0.0, torque_max], #go back up, close gripper 
+                # [x_neutral, y_neutral, z_max, 0.0, torque_max],#neutral position, open gripper
                 ])
 
         video_frames = []

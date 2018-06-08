@@ -252,6 +252,26 @@ register(
     reward_threshold=-3.75,
 )
 
+obj_ids = list(range(10))
+env_ids = list(range(5,10))
+
+for obj_id in obj_ids:
+    for env_id in env_ids:
+        register(
+            id='MultiReacherMetaClassifierEnv-obj-{}-env-{}-v0'.format(obj_id, env_id),
+            entry_point='gym.envs.mujoco:MultiReacherMetaClassifierEnv',
+            max_episode_steps=50,
+            reward_threshold=25.0,
+            kwargs={'object_id' : obj_id, 'env_id': env_id}
+        )
+
+register(
+    id='MultiReacherMetaClassifierEnv-v0',
+    entry_point='gym.envs.mujoco:MultiReacherMetaClassifierEnv',
+    max_episode_steps=50,
+    reward_threshold=25.0,
+)
+
 register(
     id='Rope-v0',
     entry_point='gym.envs.mujoco:RopeEnv',

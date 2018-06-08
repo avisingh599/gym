@@ -38,14 +38,21 @@ class MultiReacherEnvV2(mujoco_env.MujocoEnv, utils.EzPickle):
         self.do_simulation(a, self.frame_skip)
         ob = self._get_obs()
         done = False
+        if reward_dist > -0.1:
+            is_success=True
+        else:
+            is_success = False
+
         return ob, reward, done, dict(reward_dist=reward_dist,
                                       reward_dist_1=reward_dist_1,
                                       reward_dist_2=reward_dist_2,
                                       reward_dist_tip=reward_dist_tip,
-                                      reward_ctrl=reward_ctrl)
+                                      reward_ctrl=reward_ctrl,
+                                      is_success=is_success,
+                                      )
 
     def reset_model(self):
-        print("resetted")
+        #print("resetted")
         qpos = self.np_random.uniform(low=-0.2, high=0.2, size=self.model.nq) + self.init_qpos
         self.goal = np.asarray([0, 0])
         # self.goal[0] = self.np_random.uniform(low=-np.pi, high=np.pi)

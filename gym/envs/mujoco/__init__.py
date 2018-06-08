@@ -39,6 +39,9 @@ from gym.envs.mujoco.multi_reacher import MultiReacherEnv
 from gym.envs.mujoco.multi_reacher_v2 import MultiReacherEnvV2
 #from gym.envs.mujoco.simple_pusher import SimplePusherEnv
 
+#classifier envs
+from gym.envs.mujoco.multi_reacher_meta_classifier import MultiReacherMetaClassifierEnv
+
 
 #rope stuff
 from gym.envs.mujoco.rope import RopeEnv
