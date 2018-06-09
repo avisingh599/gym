@@ -57,7 +57,7 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         vec_2 = np.asarray([1.0, 0.0]) #horizontal line
         cosine = np.dot(vec_1, vec_2)/(np.linalg.norm(vec_1) + 1e-10)
         abs_cos = np.abs(cosine)
-        
+
         #compute action penalty
         #act_dim = self.action_space.shape[0]
         movement_1 = -1.0*np.linalg.norm(self.sim.data.qpos[:2] - a[:2])

@@ -168,6 +168,17 @@ class MultiReacherMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             reward = 0.0
             self.last_reward = False
 
+        #count false positive/negatives
+        if reward == 1.0 and not is_success:
+            false_positive=True
+        else:
+            false_positive=False
+
+        if reward == 0.0 and is_success:
+            false_negative=True
+        else:
+            false_negative=False
+
         #reward = np.argmax(prediction)
         #end = time.time()
         #print(end - start)
@@ -180,6 +191,8 @@ class MultiReacherMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                                       reward_dist_tip=reward_dist_tip,
                                       reward_ctrl=reward_ctrl,
                                       is_success=is_success,
+                                      false_positive=false_positive,
+                                      false_negative=false_negative,
                                       )
 
     def reset_model(self):
