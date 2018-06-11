@@ -1,7 +1,9 @@
 from gym.envs.mujoco.dynamic_mjc.model_builder import MJCModel
 import numpy as np
 
-def rope(num_beads = 5):
+def rope(num_beads = 5, 
+    init_pos=[0.0, 0.0, 0.0],
+    ):
     mjcmodel = MJCModel('rope')
     mjcmodel.root.compiler(inertiafromgeom="auto",angle="radian",coordinate="local", eulerseq="XYZ")
     mjcmodel.root.size(njmax=6000, nconmax=6000)
@@ -38,11 +40,11 @@ def rope(num_beads = 5):
     finger_2.geom(condim="6", contype="4", conaffinity="4",  type="box", size=".01 .02 .1", rgba="0.3 0.3 0.3 1", mass="0.08")
     finger_2.site(name="finger2_surf", pos="-0.01 0 0", size=".0025 .0190 .095", type="box", rgba="1.0 0.0 0.0 0")
 
-    init_pos = [0.0, 0.0, 0.0]
+    
     displacement = [0.0, 0.07, 0.0]
     
     #bead_pos = [0.0, 0.0, 0.015] #for cuboidal beads
-    bead_pos = [0.0, 0.0, 0.0] #for spherical beads
+    site_pos = [0.0, 0.0, 0.0] #for spherical beads
     tendon_range = [0.0, 0.07]
 
     beads = []
@@ -54,12 +56,12 @@ def rope(num_beads = 5):
                   mass="0.03", contype="7", conaffinity="7", friction="1.0 0.10 0.002",
                   condim="6", solimp="0.99 0.99 0.01", solref="0.01 1")
         
-        beads[i].site(name="site_{}".format(i), pos=bead_pos, type="sphere", size="0.01")
+        beads[i].site(name="site_{}".format(i), pos=site_pos, type="sphere", size="0.01")
 
         # beads[i].geom(type="box", size="0.015 0.03 0.015", rgba="0.8 0.2 0.2 1", 
         #           mass="0.03", contype="7", conaffinity="7", friction="1.0 0.10 0.002",
         #           condim="6", solimp="0.99 0.99 0.01", solref="0.01 1")
-        # beads[i].site(name="site_{}".format(i), pos=bead_pos, type="sphere", size="0.01")
+        # beads[i].site(name="site_{}".format(i), pos=site_pos, type="sphere", size="0.01")
 
     container = worldbody.body(name="container", pos=[0,0,-0.05])
     border_front = container.body(name="border_front", pos="0 -.5  0")

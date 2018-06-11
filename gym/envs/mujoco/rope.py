@@ -9,7 +9,8 @@ import mujoco_py
 
 class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self,
-                 num_beads=7, 
+                 num_beads=7,
+                 init_pos=[0.0, 0.0, 0.0],
                  substeps=50, 
                  log_video=False, 
                  video_substeps = 5, 
@@ -25,6 +26,7 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         
         #env params
         self.num_beads = num_beads
+        self.init_pos = init_pos
 
         #reward params
         self.sparse = sparse
@@ -37,7 +39,7 @@ class RopeEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.video_w = video_w
         self.camera_name = camera_name
 
-        model = rope(num_beads=self.num_beads)
+        model = rope(num_beads=self.num_beads, init_pos=self.init_pos)
         with model.asfile() as f:
             mujoco_env.MujocoEnv.__init__(self, f.name, 5)
         

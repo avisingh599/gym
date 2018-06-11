@@ -254,7 +254,6 @@ register(
 
 obj_ids = list(range(10))
 env_ids = list(range(5,10))
-
 for obj_id in obj_ids:
     for env_id in env_ids:
         register(
@@ -278,6 +277,16 @@ register(
     max_episode_steps=5,
     reward_threshold=0.8, #TODO
 )
+
+task_ids = list(range(10))
+for task_id in task_ids:
+    register(
+        id='RopeMetaClassifier-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeMetaClassifierEnv',
+        max_episode_steps=15,
+        reward_threshold=0.8, #TODO
+        kwargs={'task_id' : task_id}
+    )
 
 register(
     id='RopeVideo-v0',
