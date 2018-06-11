@@ -82,7 +82,7 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                  video_h=500, 
                  video_w=500,
                  camera_name='overheadcam',
-                 action_penalty_const=0,):
+                 action_penalty_const=0.0,):
         utils.EzPickle.__init__(self)
         
         #sim params
@@ -132,6 +132,7 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         high = np.asarray(4*[0.4])
         self.action_space = spaces.Box(low=low, high=high, dtype=np.float32)
 
+        self.last_reward = False
         #when using xmls        
         #mujoco_env.MujocoEnv.__init__(self, 'rope.xml', 5)
 
@@ -150,12 +151,15 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         if prediction[0,1] > 0.85:
             if self.last_reward:
                 reward = 1.0
+                is_success_cls = True
             else:
                 reward = 0.0
                 self.last_reward = True
+                is_success_cls = False
         else:
             reward = 0.0
             self.last_reward = False
+            is_success_cls = False
 
         reward += action_penalty*self.action_penalty_const
 
@@ -164,11 +168,12 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         #success is determined by classifier as of now
         if prediction[0,1] > 0.5:
-            is_success_cls = True
+            is_success_borderline = True
         else:
-            is_success_cls = False
+            is_success_borderline = False
 
-        return ob, reward, done, dict(is_success_cls=is_success_cls, 
+        return ob, reward, done, dict(is_success_cls=is_success_cls,
+                                      is_success_borderline=is_success_borderline, 
                                       video_frames=video_frames,
                                       action_penalty=action_penalty)
 
@@ -211,8 +216,8 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         x_end = a[2]
         y_end = a[3]
 
-        x_neutral = 0.0
-        y_neutral = -0.2
+        x_neutral = -0.4
+        y_neutral = -0.4
         z_min = -0.1
         z_max = +0.05
         torque_max = +10.0
@@ -226,7 +231,7 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 [x_start, y_start, z_min, 0.0, torque_neutral], #go down
                 [x_end,y_end,z_min,0.0,torque_neutral], #move
                 [x_end,y_end, z_max, 0.0, torque_max], #go back up, close gripper 
-                # [x_neutral, y_neutral, z_max, 0.0, torque_max],#neutral position, open gripper
+                [x_neutral, y_neutral, z_max, 0.0, torque_max],#neutral position, open gripper
                 ])
 
         video_frames = []
