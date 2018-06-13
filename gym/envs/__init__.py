@@ -278,7 +278,7 @@ register(
     reward_threshold=0.8, #TODO
 )
 
-task_ids = list(range(10))
+task_ids = list(range(50))
 for task_id in task_ids:
     register(
         id='RopeMetaClassifier-{}-v0'.format(task_id),

@@ -1,11 +1,18 @@
 from gym.envs.mujoco.dynamic_mjc.model_builder import MJCModel
 import numpy as np
+import os
 
 def rope(num_beads = 5, 
     init_pos=[0.0, 0.0, 0.0],
+    texture=False,
     ):
     mjcmodel = MJCModel('rope')
-    mjcmodel.root.compiler(inertiafromgeom="auto",angle="radian",coordinate="local", eulerseq="XYZ")
+    mjcmodel.root.compiler(inertiafromgeom="auto",
+        angle="radian",
+        coordinate="local", 
+        eulerseq="XYZ", 
+        texturedir=os.path.dirname(os.path.realpath(__file__)) + "/../assets/textures")
+
     mjcmodel.root.size(njmax=6000, nconmax=6000)
     mjcmodel.root.option(timestep="0.005", gravity="0 0 -9.81", iterations="50", integrator="Euler")
     default = mjcmodel.root.default()
@@ -73,8 +80,11 @@ def rope(num_beads = 5,
     border_left = container.body(name="border_left", pos="-.5 0. 0")
     border_left.geom(type="box", size=".01  .5 .1", rgba="0 .1 .9 .3")
     table = container.body(name="table", pos="0 0 -.01")
-    table.geom(type="box", size=".5  .5 .01", rgba="0 .9 0 1", contype="7", conaffinity="7")
-
+    if texture:
+        table.geom(type="box", size=".5  .5 .01", rgba=".5 .5 .5 1", contype="7", conaffinity="7", material="table_material")
+    else:
+        table.geom(type="box", size=".5  .5 .01", rgba="0 .9 0 1", contype="7", conaffinity="7")
+        
     light = worldbody.body(name="light", pos=[0,0,1])
     light.light(name="light0", mode="fixed", directional="false", active="true", castshadow="true")
 
@@ -96,6 +106,13 @@ def rope(num_beads = 5,
     equality = mjcmodel.root.equality()
     equality.joint(joint1="j_finger1", joint2="j_finger2", polycoef="0 -1 0 0 0")
 
+    asset = mjcmodel.root.asset()
+    asset.texture(file='wood.png', name='table_texture')
+    asset.material(name='table_material', rgba='1 1 1 1', shininess='0.3', specular='1', texture='table_texture')
+
     return mjcmodel
 
-
+# <asset>
+# <texture file="describable/dtd/images/waffled/waffled_0169.png" name="vase_texture" />
+# <material name="vase_material" rgba="1 1 1 1" shininess="0.3" specular="1" texture="vase_texture" />
+# </asset>

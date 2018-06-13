@@ -10,10 +10,12 @@ import mujoco_py
 import tensorflow as tf
 from tensorflow.python.platform import flags
 from visual_mpc.one_shot_predictor import OneShotPredictor
+
 import imageio
 import time
-
+import os
 import argparse
+
 tf.flags._global_parser = argparse.ArgumentParser() #hacky stuff to clear the flags
 FLAGS = flags.FLAGS
 
@@ -70,10 +72,20 @@ flags.DEFINE_bool('debug', False, 'debugging mode')
 flags.DEFINE_bool('resnet_feats', False, 'resnet_feats')
 flags.DEFINE_bool('vgg_path', False, 'resnet_feats')
 
+model_name = 'model24000'
+
+if os.environ.get('NVIDIA_DOCKER') is not None:
+    METACLASSIFIER_MODEL_PATH = '/rope_models/rope_model_0/{}'.format(model_name)
+    IMAGES_DIR = '/rope_data/data_1'
+else:
+    METACLASSIFIER_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/rope_models/rope_model_0/{}'.format(model_name)
+    IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_1'
+
 
 class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self,
                  task_id=0,
+                 texture=False,
                  num_beads=12,
                  init_pos=[0.0, -0.3, 0.0],
                  substeps=50, 
@@ -93,6 +105,7 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.init_pos = init_pos
         self.width = 128
         self.height = 128
+        self.texture = texture
         #reward params
         self.action_penalty_const = action_penalty_const
 
@@ -103,19 +116,20 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.video_w = video_w
         self.camera_name = camera_name
 
-        model = rope(num_beads=self.num_beads, init_pos=self.init_pos)
+        model = rope(num_beads=self.num_beads, 
+                    init_pos=self.init_pos,
+                    texture=self.texture)
         with model.asfile() as f:
             mujoco_env.MujocoEnv.__init__(self, f.name, 5)
         
         #load meta classifier model
-        pretrained_model_path = '/media/avi/data/Work/proj_3/rope_models/rope_model_0/model99999'
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=config)
-        self.success_pred = OneShotPredictor(pretrained_model_path, self.sess)
+        self.success_pred = OneShotPredictor(METACLASSIFIER_MODEL_PATH, self.sess)
 
         #load example success images
-        task_dir = '/media/avi/data/Work/proj_3/rope_data/data/task_{}/'.format(task_id)
+        task_dir = '{}/task_{}/'.format(IMAGES_DIR, task_id)
         successes = ['success_0.png', 'success_1.png', 'success_2.png', 'success_3.png', 'success_4.png']
         success_frames = []
 
@@ -175,7 +189,8 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         return ob, reward, done, dict(is_success_cls=is_success_cls,
                                       is_success_borderline=is_success_borderline, 
                                       video_frames=video_frames,
-                                      action_penalty=action_penalty)
+                                      action_penalty=action_penalty,
+                                      prediction_img=img)
 
 
     def pick_place(self, a):
@@ -245,7 +260,7 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         a_pos = a[:self.action_space.shape[0]]
 
         step_size = (a_pos - qpos_curr) / self.substeps
-        
+
         if self.log_video:
             video_frames = np.zeros((int(self.substeps/self.video_substeps), self.video_h, self.video_w, 3))
         else:
@@ -276,5 +291,9 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             self.sim.data.qvel.flat,
         ])
 
-if __name__ == "__main__": 
-   pass
+if __name__ == "__main__":
+    env = RopeMetaClassifierEnv(texture=True)
+    img = env.sim.render(env.width, env.height, camera_name="overheadcam")/255.0
+    import matplotlib.pyplot as plt
+    import IPython; IPython.embed()
+    pass
