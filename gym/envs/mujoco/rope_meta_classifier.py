@@ -305,6 +305,7 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 if __name__ == "__main__":
     env = RopeMetaClassifierEnv(texture=True)
     img = env.sim.render(env.width, env.height, camera_name="overheadcam")/255.0
+    env.push(np.zeros(4,))
     import matplotlib.pyplot as plt
     import IPython; IPython.embed()
     pass

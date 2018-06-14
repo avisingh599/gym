@@ -28,7 +28,7 @@ def rope(num_beads = 5,
     gripper = worldbody.body(name="gripper", pos=[0,0,0.25])
 
     gripper.inertial(pos="0 0 0", mass="1", diaginertia="16.667 16.667 16.667")
-    gripper.geom(type="box", size=".1 .03 .03", rgba="0.1 0.0 0.9 1", contype="0", conaffinity="0")
+    gripper.geom(type="box", size=".1 .03 .03", rgba="0.5 0.5 0.5 1", contype="0", conaffinity="0")
     gripper.geom(type="box", size=".07 .035 1", rgba="0.9 0.9 0.9 1", pos="0 0 1", contype="0", conaffinity="0")
 
     gripper.joint(name="slide_x", type="slide", pos="0 0 0", axis="1 0 0", limited="true", range="-0.5 0.5", armature="0", damping="30", stiffness="0")
@@ -59,10 +59,15 @@ def rope(num_beads = 5,
         new_pos = list(np.asarray(init_pos) + i*(np.asarray(displacement)))
         beads.append(worldbody.body(name="bead_{}".format(i), pos=new_pos))
         beads[i].joint(type="free")
-        beads[i].geom(type="sphere", size="0.03", rgba="0.8 0.2 0.2 1", 
+        if texture:
+            beads[i].geom(type="sphere", size="0.03", rgba="0.5 0.5 0.5 1", 
+                  mass="0.03", contype="7", conaffinity="7", friction="1.0 0.10 0.002",
+                  condim="6", solimp="0.99 0.99 0.01", solref="0.01 1", material="bead_material")
+        else:
+            beads[i].geom(type="sphere", size="0.03", rgba="0.8 0.2 0.2 1", 
                   mass="0.03", contype="7", conaffinity="7", friction="1.0 0.10 0.002",
                   condim="6", solimp="0.99 0.99 0.01", solref="0.01 1")
-        
+
         beads[i].site(name="site_{}".format(i), pos=site_pos, type="sphere", size="0.01")
 
         # beads[i].geom(type="box", size="0.015 0.03 0.015", rgba="0.8 0.2 0.2 1", 
@@ -109,6 +114,8 @@ def rope(num_beads = 5,
     asset = mjcmodel.root.asset()
     asset.texture(file='wood.png', name='table_texture')
     asset.material(name='table_material', rgba='1 1 1 1', shininess='0.3', specular='1', texture='table_texture')
+    asset.texture(file='marble.png', name='bead_texture')
+    asset.material(name='bead_material', rgba='1 1 1 1', shininess='0.3', specular='1', texture='bead_texture')
 
     return mjcmodel
 
