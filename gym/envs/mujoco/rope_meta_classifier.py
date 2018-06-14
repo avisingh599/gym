@@ -72,20 +72,47 @@ flags.DEFINE_bool('debug', False, 'debugging mode')
 flags.DEFINE_bool('resnet_feats', False, 'resnet_feats')
 flags.DEFINE_bool('vgg_path', False, 'resnet_feats')
 
-model_name = 'model29000'
+model_name = 'model9000'
 
 if os.environ.get('NVIDIA_DOCKER') is not None:
-    METACLASSIFIER_MODEL_PATH = '/rope_models/rope_model_rand_act_0/{}'.format(model_name)
-    IMAGES_DIR = '/rope_data/data/data_rand_act_0/'
+    METACLASSIFIER_MODEL_PATH = '/rope_models/rope_model_rand_act_1/{}'.format(model_name)
+    IMAGES_DIR = '/rope_data/data/data_rand_act_1/'
 else:
-    METACLASSIFIER_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/rope_models/rope_model_rand_act_0/{}'.format(model_name)
-    IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_rand_act_0/'
+    METACLASSIFIER_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/rope_models/rope_model_rand_act_1/{}'.format(model_name)
+    IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_rand_act_1/'
 
+def get_beads_xy(qpos, num_beads):
+    init_joint_offset = 6
+    num_free_joints = 7
+
+    xy_list = []
+    for j in range(num_beads):
+        offset = init_joint_offset + j*num_free_joints
+        xy_list.append(qpos[offset:offset+2])
+
+    return np.asarray(xy_list)
+
+def get_com(xy_list):
+    return np.mean(xy_list, axis=0)
+
+def calculate_distance(qpos1, qpos2, num_beads):
+
+    xy1 = get_beads_xy(qpos1, num_beads)
+    xy2 = get_beads_xy(qpos2, num_beads)
+
+    com1 = get_com(xy1)
+    com2 = get_com(xy2)
+
+    xy1_translate = xy1 + (com2 - com1)
+
+    distance = np.linalg.norm(xy1_translate - xy2)
+
+    return distance
 
 class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self,
                  task_id=0,
-                 texture=False,
+                 texture=True,
                  success_thresh=0.2,
                  double_frame_check=False,
                  num_beads=12,
@@ -146,6 +173,8 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.success_pred.backward(self.success_frames)
         self.success_pred.construct_model()
 
+        #load the reference qpos
+        self.qpos_ref = np.loadtxt(os.path.join(task_dir, 'qpos_original.txt'))
 
         low = np.asarray(4*[-0.4])
         high = np.asarray(4*[0.4])
@@ -197,11 +226,14 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         else:
             is_success_borderline = False
 
+        distance = calculate_distance(self.qpos_ref, self.sim.data.qpos, self.num_beads)
+
         return ob, reward, done, dict(is_success_cls=is_success_cls,
                                       is_success_borderline=is_success_borderline, 
                                       video_frames=video_frames,
                                       action_penalty=action_penalty,
-                                      prediction_img=img)
+                                      prediction_img=img,
+                                      oracle_distance=distance)
 
 
     def pick_place(self, a):
@@ -242,8 +274,8 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         x_end = a[2]
         y_end = a[3]
 
-        x_neutral = -0.4
-        y_neutral = -0.4
+        x_neutral = -0.5
+        y_neutral = -0.5
         z_min = -0.1
         z_max = +0.05
         torque_max = +10.0
@@ -257,6 +289,7 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                 [x_start, y_start, z_min, 0.0, torque_neutral], #go down
                 [x_end,y_end,z_min,0.0,torque_neutral], #move
                 [x_end,y_end, z_max, 0.0, torque_max], #go back up, close gripper 
+                [x_neutral, y_neutral, z_max, 0.0, torque_max],#neutral position, open gripper
                 [x_neutral, y_neutral, z_max, 0.0, torque_max],#neutral position, open gripper
                 ])
 
@@ -304,8 +337,10 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
 if __name__ == "__main__":
     env = RopeMetaClassifierEnv(texture=True)
-    img = env.sim.render(env.width, env.height, camera_name="overheadcam")/255.0
     env.push(np.zeros(4,))
+
+    img = env.sim.render(env.width, env.height, camera_name="overheadcam")/255.0
+
     import matplotlib.pyplot as plt
     import IPython; IPython.embed()
     pass
