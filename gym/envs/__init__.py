@@ -278,15 +278,22 @@ register(
     reward_threshold=0.8, #TODO
 )
 
-task_ids = list(range(50))
+task_ids = list(range(240, 300))
+threshs = [0.2, 0.4, 0.6]
+double_checks = [True, False]
+
 for task_id in task_ids:
-    register(
-        id='RopeMetaClassifier-{}-v0'.format(task_id),
-        entry_point='gym.envs.mujoco:RopeMetaClassifierEnv',
-        max_episode_steps=15,
-        reward_threshold=0.8, #TODO
-        kwargs={'task_id' : task_id}
-    )
+    for thresh in threshs:
+        for double_check in double_checks:
+            register(
+                id='RopeMetaClassifier-{}-{}-{}-v0'.format(task_id, thresh, double_check),
+                entry_point='gym.envs.mujoco:RopeMetaClassifierEnv',
+                max_episode_steps=5,
+                reward_threshold=0.8,
+                kwargs={'task_id' : task_id, 
+                    'success_thresh': thresh, 
+                    'double_frame_check': double_check}
+                )
 
 register(
     id='RopeVideo-v0',

@@ -72,20 +72,22 @@ flags.DEFINE_bool('debug', False, 'debugging mode')
 flags.DEFINE_bool('resnet_feats', False, 'resnet_feats')
 flags.DEFINE_bool('vgg_path', False, 'resnet_feats')
 
-model_name = 'model24000'
+model_name = 'model29000'
 
 if os.environ.get('NVIDIA_DOCKER') is not None:
-    METACLASSIFIER_MODEL_PATH = '/rope_models/rope_model_0/{}'.format(model_name)
-    IMAGES_DIR = '/rope_data/data_1'
+    METACLASSIFIER_MODEL_PATH = '/rope_models/rope_model_rand_act_0/{}'.format(model_name)
+    IMAGES_DIR = '/rope_data/data/data_rand_act_0/'
 else:
-    METACLASSIFIER_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/rope_models/rope_model_0/{}'.format(model_name)
-    IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_1'
+    METACLASSIFIER_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/rope_models/rope_model_rand_act_0/{}'.format(model_name)
+    IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_rand_act_0/'
 
 
 class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self,
                  task_id=0,
                  texture=False,
+                 success_thresh=0.2,
+                 double_frame_check=False,
                  num_beads=12,
                  init_pos=[0.0, -0.3, 0.0],
                  substeps=50, 
@@ -96,18 +98,21 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                  camera_name='overheadcam',
                  action_penalty_const=0.0,):
         utils.EzPickle.__init__(self)
-        
+
         #sim params
         self.substeps = substeps # number of intermediate positions to generate
-        
+
         #env params
         self.num_beads = num_beads
         self.init_pos = init_pos
         self.width = 128
         self.height = 128
         self.texture = texture
+
         #reward params
         self.action_penalty_const = action_penalty_const
+        self.success_thresh = success_thresh
+        self.double_frame_check = double_frame_check
 
         #video params
         self.log_video = log_video
@@ -152,9 +157,7 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     def step(self, a):
 
-
         video_frames = self.push(a)
-
         img = self.sim.render(self.width, self.height, camera_name="overheadcam")/255.0
         prediction = self.success_pred.forward(img)
 
@@ -162,18 +165,26 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         movement_2 =  -1.0*np.linalg.norm(a[:2] - a[2:])
         action_penalty = movement_1 + movement_2
 
-        if prediction[0,1] > 0.85:
-            if self.last_reward:
+        if self.double_frame_check:
+            if prediction[0,1] > self.success_thresh:
+                if self.last_reward:
+                    reward = 1.0
+                    is_success_cls = True
+                else:
+                    reward = 0.0
+                    self.last_reward = True
+                    is_success_cls = False
+            else:
+                reward = 0.0
+                self.last_reward = False
+                is_success_cls = False
+        else:
+            if prediction[0,1] > self.success_thresh:
                 reward = 1.0
                 is_success_cls = True
             else:
                 reward = 0.0
-                self.last_reward = True
                 is_success_cls = False
-        else:
-            reward = 0.0
-            self.last_reward = False
-            is_success_cls = False
 
         reward += action_penalty*self.action_penalty_const
 
