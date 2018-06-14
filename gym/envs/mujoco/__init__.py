@@ -46,3 +46,4 @@ from gym.envs.mujoco.multi_reacher_meta_classifier import MultiReacherMetaClassi
 #rope stuff
 from gym.envs.mujoco.rope import RopeEnv
 from gym.envs.mujoco.rope_meta_classifier import RopeMetaClassifierEnv
+from gym.envs.mujoco.rope_oracle import RopeOracleEnv

@@ -279,7 +279,7 @@ register(
 )
 
 task_ids = list(range(240, 300))
-threshs = [0.2, 0.4, 0.6]
+threshs = [0.2, 0.4, 0.6, 0.8, 0.9, 0.95]
 double_checks = [True, False]
 
 for task_id in task_ids:
@@ -294,6 +294,15 @@ for task_id in task_ids:
                     'success_thresh': thresh, 
                     'double_frame_check': double_check}
                 )
+
+for task_id in task_ids:
+    register(
+        id='RopeOracle-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeOracleEnv',
+        max_episode_steps=5,
+        reward_threshold=0.8,
+        kwargs={'task_id' : task_id}
+        )
 
 register(
     id='RopeVideo-v0',
