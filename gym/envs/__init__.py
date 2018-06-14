@@ -295,10 +295,21 @@ for task_id in task_ids:
                     'double_frame_check': double_check}
                 )
 
+task_ids = list(range(240, 300))
 for task_id in task_ids:
     register(
         id='RopeOracle-{}-v0'.format(task_id),
         entry_point='gym.envs.mujoco:RopeOracleEnv',
+        max_episode_steps=5,
+        reward_threshold=0.8,
+        kwargs={'task_id' : task_id}
+        )
+
+task_ids = list(range(240, 300))
+for task_id in task_ids:
+    register(
+        id='RopeAE-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeAEEnv',
         max_episode_steps=5,
         reward_threshold=0.8,
         kwargs={'task_id' : task_id}
