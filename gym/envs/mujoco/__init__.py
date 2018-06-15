@@ -51,3 +51,4 @@ from gym.envs.mujoco.rope_ae import RopeAEEnv
 
 #rope stuff from pixels
 from gym.envs.mujoco.rope_oracle_vision import RopeOracleVisionEnv
+
