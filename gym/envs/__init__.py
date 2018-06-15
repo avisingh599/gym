@@ -305,11 +305,29 @@ for task_id in task_ids:
         kwargs={'task_id' : task_id}
         )
 
-task_ids = list(range(240, 300))
 for task_id in task_ids:
     register(
         id='RopeAE-{}-v0'.format(task_id),
         entry_point='gym.envs.mujoco:RopeAEEnv',
+        max_episode_steps=5,
+        reward_threshold=0.8,
+        kwargs={'task_id' : task_id}
+        )
+
+for task_id in task_ids:
+    register(
+        id='RopePixelDistance-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeAEEnv',
+        max_episode_steps=5,
+        reward_threshold=0.8,
+        kwargs={'task_id' : task_id,
+                'pixel_distance': True}
+        )
+
+for task_id in task_ids:
+    register(
+        id='RopeOracleVision-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeOracleVisionEnv',
         max_episode_steps=5,
         reward_threshold=0.8,
         kwargs={'task_id' : task_id}

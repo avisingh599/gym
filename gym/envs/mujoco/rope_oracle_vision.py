@@ -17,14 +17,16 @@ import time
 import os
 import argparse
 
-model_name = 'cnn_ae_weights_070000.pkl'
+
+ae_model_name = 'cnn_ae_weights_070000.pkl'
 
 if os.environ.get('NVIDIA_DOCKER') is not None:
-    AE_MODEL_PATH = '/dsae/models/{}'.format(model_name)
+    AE_MODEL_PATH = '/dsae/models/{}'.format(ae_model_name)
     IMAGES_DIR = '/rope_data/data/data_rand_act_1/'
 else:
-    AE_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/dsae/models/{}'.format(model_name)
+    AE_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/dsae/models/{}'.format(ae_model_name)
     IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_rand_act_1/'
+
 
 def get_beads_xy(qpos, num_beads):
     init_joint_offset = 6
@@ -54,7 +56,7 @@ def calculate_distance(qpos1, qpos2, num_beads):
 
     return distance
 
-class RopeAEEnv(mujoco_env.MujocoEnv, utils.EzPickle):
+class RopeOracleVisionEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self,
                  task_id=0,
                  texture=True,
@@ -67,8 +69,7 @@ class RopeAEEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                  video_h=500, 
                  video_w=500,
                  camera_name='overheadcam',
-                 action_penalty_const=0.0,
-                 pixel_distance=False):
+                 action_penalty_const=0.0,):
         utils.EzPickle.__init__(self)
 
         #sim params
@@ -80,7 +81,6 @@ class RopeAEEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.width = 128
         self.height = 128
         self.texture = texture
-        self.pixel_distance = pixel_distance
 
         #reward params
         self.action_penalty_const = action_penalty_const
@@ -99,107 +99,53 @@ class RopeAEEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         i_dim = [128, 128, 3]
         recon_dim = [32, 32, 3]
-
         arch = 'cnn'
         n_filters = [64, 32, 16]
         strides = [2, 1, 1]
         decoder_layers = [200, 100, 50]
-
         self.ae_model = AutoEncoderNetwork(arch, i_dim, recon_dim, n_filters, strides, decoder_layers)
         self.ae_model.load_wt(self.sess, AE_MODEL_PATH)
+
         model = rope(num_beads=self.num_beads, 
                     init_pos=self.init_pos,
                     texture=self.texture)
         with model.asfile() as f:
             mujoco_env.MujocoEnv.__init__(self, f.name, 5)
 
-        #load example success images
-        task_dir = '{}/task_{}/'.format(IMAGES_DIR, task_id)
-        successes = ['success_0.png', 'success_1.png', 'success_2.png', 'success_3.png', 'success_4.png']
-        success_frames = []
-
-        for k in range(5):
-            frame = imageio.imread(task_dir + successes[k])[:, :, :3] / 1.0
-            success_frames.append(frame)
-
-        self.success_frames = np.asarray(success_frames)
-
-        feed_dict = {
-            self.ae_model.i : self.success_frames,
-            self.ae_model.is_train: False,
-        }
-        self.success_feats = self.sess.run(self.ae_model.feats, feed_dict=feed_dict) 
-
-        # self.success_pred.backward(self.success_frames)
-        # self.success_pred.construct_model()
-
         #load the reference qpos
+        task_dir = '{}/task_{}/'.format(IMAGES_DIR, task_id)
         self.qpos_ref = np.loadtxt(os.path.join(task_dir, 'qpos_original.txt'))
 
         low = np.asarray(4*[-0.4])
         high = np.asarray(4*[0.4])
         self.action_space = spaces.Box(low=low, high=high, dtype=np.float32)
 
-        self.last_reward = False
-        #when using xmls        
-        #mujoco_env.MujocoEnv.__init__(self, 'rope.xml', 5)
 
     def step(self, a):
 
         video_frames = self.push(a)
-        #vae takes in images which are in 0 to 255.0 range
-        img = self.sim.render(self.width, self.height, camera_name="overheadcam")/1.0
-        
-        #prediction = self.ae_model.forward(img)
-        vae_dist = None
-        pixel_dist = None
-
-        if not self.pixel_distance:
-            feed_dict = {
-                self.ae_model.i : np.expand_dims(img, axis=0),
-                self.ae_model.is_train: False,
-            }
-            
-            img_feats =  self.sess.run(self.ae_model.feats, feed_dict=feed_dict) 
-
-            ae_space_distances = []
-            for i in range(self.success_feats.shape[0]):
-                ae_space_distances.append(np.linalg.norm(self.success_feats[i] - img_feats))
-
-            #make the min distance from the features the reward
-            vae_dist = np.min(np.asarray(ae_space_distances))
-            reward = -1.0*vae_dist
-        else:
-            pixel_space_distances = []
-            for i in range(self.success_feats.shape[0]):
-                pixel_space_distances.append(np.linalg.norm(self.success_frames[i] - img))
-                pixel_dist = np.min(np.asarray(pixel_space_distances))
-                reward = -1.0*pixel_dist
-
         movement_1 = -1.0*np.linalg.norm(self.sim.data.qpos[:2] - a[:2])
         movement_2 =  -1.0*np.linalg.norm(a[:2] - a[2:])
         action_penalty = movement_1 + movement_2
 
+        distance = calculate_distance(self.qpos_ref, self.sim.data.qpos, self.num_beads)
+        reward = -1.0*distance
         reward += action_penalty*self.action_penalty_const
 
-        distance = calculate_distance(self.qpos_ref, self.sim.data.qpos, self.num_beads)
+        ob = self._get_obs()
+        done = False
+
+        #success is determined by classifier as of now
         if distance < self.success_thresh:
             is_success = True
         else:
             is_success = False
 
 
-        ob = self._get_obs()
-        done = False
-        distance = calculate_distance(self.qpos_ref, self.sim.data.qpos, self.num_beads)
-
         return ob, reward, done, dict(is_success=is_success,
-                                      vae_dist=vae_dist,
                                       video_frames=video_frames,
                                       action_penalty=action_penalty,
-                                      prediction_img=img,
-                                      oracle_distance=distance,
-                                      pixel_dist=pixel_dist)
+                                      oracle_distance=distance)
 
 
     def pick_place(self, a):
@@ -296,14 +242,24 @@ class RopeAEEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         return self._get_obs()
 
     def _get_obs(self):
+
+        img = self.sim.render(self.width, self.height, camera_name="overheadcam")/1.0
+        
+        #prediction = self.ae_model.forward(img)
+        feed_dict = {
+            self.ae_model.i : np.expand_dims(img, axis=0),
+            self.ae_model.is_train: False,
+        }
+
+        img_feats =  self.sess.run(self.ae_model.feats, feed_dict=feed_dict) 
+
         return np.concatenate([
-            self.sim.data.qpos.flat,
-            self.sim.data.qvel.flat,
+            img_feats[0],
+            self.sim.data.qpos.flat[:6],
+            self.sim.data.qvel.flat[:6],
         ])
 
 if __name__ == "__main__":
-    env = RopeAEEnv()
+    env = RopeOracleVisionEnv()
     env.push(np.zeros(4,))
     env.step(np.zeros(4,))
-
-    img = env.sim.render(env.width, env.height, camera_name="overheadcam")/255.0
