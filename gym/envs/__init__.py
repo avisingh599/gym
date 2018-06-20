@@ -279,7 +279,7 @@ register(
 )
 
 task_ids = list(range(240, 300))
-threshs = [0.2, 0.4, 0.6, 0.8, 0.9, 0.95]
+threshs = [0.2, 0.4, 0.6, 0.8, 0.85, 0.9, 0.95]
 double_checks = [True, False]
 
 for task_id in task_ids:
@@ -294,6 +294,21 @@ for task_id in task_ids:
                     'success_thresh': thresh, 
                     'double_frame_check': double_check}
                 )
+obs_modes = ['meta_feats', 'ae_feats']
+for obs_mode in obs_modes:
+    for task_id in task_ids:
+        for thresh in threshs:
+            for double_check in double_checks:
+                register(
+                    id='RopeMetaClassifier-{}-{}-{}-{}-v0'.format(task_id, thresh, double_check, obs_mode),
+                    entry_point='gym.envs.mujoco:RopeMetaClassifierEnv',
+                    max_episode_steps=5,
+                    reward_threshold=0.8,
+                    kwargs={'task_id' : task_id, 
+                        'success_thresh': thresh, 
+                        'double_frame_check': double_check,
+                        'obs_mode': obs_mode}
+                    )
 
 task_ids = list(range(240, 300))
 for task_id in task_ids:
@@ -305,14 +320,18 @@ for task_id in task_ids:
         kwargs={'task_id' : task_id}
         )
 
-for task_id in task_ids:
-    register(
-        id='RopeAE-{}-v0'.format(task_id),
-        entry_point='gym.envs.mujoco:RopeAEEnv',
-        max_episode_steps=5,
-        reward_threshold=0.8,
-        kwargs={'task_id' : task_id}
-        )
+obs_modes = ['full_state', 'ae_feats']
+for obs_mode in obs_modes:
+    for task_id in task_ids:
+        register(
+            id='RopeAE-{}-{}-v0'.format(task_id, obs_mode),
+            entry_point='gym.envs.mujoco:RopeAEEnv',
+            max_episode_steps=5,
+            reward_threshold=0.8,
+            kwargs={'task_id' : task_id,
+            'obs_mode': obs_mode}
+            )
+
 
 for task_id in task_ids:
     register(

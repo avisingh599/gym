@@ -17,13 +17,13 @@ import time
 import os
 import argparse
 
-model_name = 'cnn_ae_weights_070000.pkl'
+ae_model_name = 'cnn_ae_weights_070000.pkl'
 
 if os.environ.get('NVIDIA_DOCKER') is not None:
-    AE_MODEL_PATH = '/root/code/dsae/models/{}'.format(model_name)
+    AE_MODEL_PATH = '/root/code/dsae/models/{}'.format(ae_model_name)
     IMAGES_DIR = '/rope_data/data/data_rand_act_1/'
 else:
-    AE_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/dsae/models/{}'.format(model_name)
+    AE_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/dsae/models/{}'.format(ae_model_name)
     IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_rand_act_1/'
 
 def get_beads_xy(qpos, num_beads):
@@ -57,6 +57,7 @@ def calculate_distance(qpos1, qpos2, num_beads):
 class RopeAEEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self,
                  task_id=0,
+                 obs_mode='full_state',
                  texture=True,
                  success_thresh=0.05,
                  num_beads=12,
@@ -80,6 +81,8 @@ class RopeAEEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.width = 128
         self.height = 128
         self.texture = texture
+        self.obs_mode = obs_mode
+
         self.pixel_distance = pixel_distance
 
         #reward params
@@ -173,8 +176,8 @@ class RopeAEEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             pixel_space_distances = []
             for i in range(self.success_feats.shape[0]):
                 pixel_space_distances.append(np.linalg.norm(self.success_frames[i] - img))
-                pixel_dist = np.min(np.asarray(pixel_space_distances))
-                reward = -1.0*pixel_dist
+            pixel_dist = np.min(np.asarray(pixel_space_distances))
+            reward = -1.0*pixel_dist
 
         movement_1 = -1.0*np.linalg.norm(self.sim.data.qpos[:2] - a[:2])
         movement_2 =  -1.0*np.linalg.norm(a[:2] - a[2:])
@@ -296,14 +299,36 @@ class RopeAEEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         return self._get_obs()
 
     def _get_obs(self):
-        return np.concatenate([
+        if self.obs_mode == 'full_state':
+            obs = np.concatenate([
             self.sim.data.qpos.flat,
             self.sim.data.qvel.flat,
-        ])
+                ])
+
+        elif self.obs_mode == 'ae_feats':
+            img = self.sim.render(self.width, self.height, camera_name="overheadcam")/1.0
+
+            feed_dict = {
+                self.ae_model.i : np.expand_dims(img, axis=0),
+                self.ae_model.is_train: False,
+            }
+
+            feats =  self.sess.run(self.ae_model.feats, feed_dict=feed_dict)[0] 
+
+            obs = np.concatenate([
+            feats,
+            self.sim.data.qpos.flat[:6],
+            self.sim.data.qvel.flat[:6],
+            ])
+
+        else:
+            raise NotImplementedError()
+
+        return obs
 
 if __name__ == "__main__":
-    env = RopeAEEnv()
+    env = RopeAEEnv(obs_mode='full_state')
     env.push(np.zeros(4,))
-    env.step(np.zeros(4,))
-
+    bla = env.step(np.zeros(4,))
+    print(bla[0].shape)
     img = env.sim.render(env.width, env.height, camera_name="overheadcam")/255.0

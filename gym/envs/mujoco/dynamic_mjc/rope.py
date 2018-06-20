@@ -23,7 +23,7 @@ def rope(num_beads = 5,
 
     worldbody.camera(name="maincam", mode="fixed", fovy="32", euler="0.7 0 0", pos="0 -1.1 1.3")
     worldbody.camera(name="leftcam", mode="fixed", fovy="32", euler="0.7 0 -1.57", pos="-1.1 0 1.3")
-    worldbody.camera(name="overheadcam", mode= "fixed", pos="0. 0. 1.5", euler="0.0 0.0 0.0")
+    worldbody.camera(name="overheadcam", mode= "fixed", pos="0. 0. 1.3", euler="0.0 0.0 0.0")
 
     gripper = worldbody.body(name="gripper", pos=[0,0,0.25])
 

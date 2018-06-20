@@ -10,6 +10,7 @@ import mujoco_py
 import tensorflow as tf
 from tensorflow.python.platform import flags
 from visual_mpc.one_shot_predictor import OneShotPredictor
+from train import AutoEncoderNetwork
 
 import imageio
 import time
@@ -73,11 +74,14 @@ flags.DEFINE_bool('resnet_feats', False, 'resnet_feats')
 flags.DEFINE_bool('vgg_path', False, 'resnet_feats')
 
 model_name = 'model9000'
+ae_model_name = 'cnn_ae_weights_070000.pkl'
 
 if os.environ.get('NVIDIA_DOCKER') is not None:
+    AE_MODEL_PATH = '/root/code/dsae/models/{}'.format(ae_model_name)
     METACLASSIFIER_MODEL_PATH = '/rope_models/rope_model_rand_act_1/{}'.format(model_name)
     IMAGES_DIR = '/rope_data/data/data_rand_act_1/'
 else:
+    AE_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/dsae/models/{}'.format(ae_model_name)
     METACLASSIFIER_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/rope_models/rope_model_rand_act_1/{}'.format(model_name)
     IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_rand_act_1/'
 
@@ -112,6 +116,7 @@ def calculate_distance(qpos1, qpos2, num_beads):
 class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self,
                  task_id=0,
+                 obs_mode='full_state',
                  texture=True,
                  success_thresh=0.2,
                  double_frame_check=False,
@@ -123,7 +128,8 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                  video_h=500, 
                  video_w=500,
                  camera_name='overheadcam',
-                 action_penalty_const=0.0,):
+                 action_penalty_const=0.0,
+                 ):
         utils.EzPickle.__init__(self)
 
         #sim params
@@ -135,6 +141,7 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.width = 128
         self.height = 128
         self.texture = texture
+        self.obs_mode = obs_mode
 
         #reward params
         self.action_penalty_const = action_penalty_const
@@ -147,12 +154,6 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.video_h = video_h
         self.video_w = video_w
         self.camera_name = camera_name
-
-        model = rope(num_beads=self.num_beads, 
-                    init_pos=self.init_pos,
-                    texture=self.texture)
-        with model.asfile() as f:
-            mujoco_env.MujocoEnv.__init__(self, f.name, 5)
         
         #load meta classifier model
         config = tf.ConfigProto()
@@ -176,11 +177,33 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         #load the reference qpos
         self.qpos_ref = np.loadtxt(os.path.join(task_dir, 'qpos_original.txt'))
 
+
+        if self.obs_mode == 'ae_feats':
+            i_dim = [128, 128, 3]
+            recon_dim = [32, 32, 3]
+            arch = 'cnn'
+            n_filters = [64, 32, 16]
+            strides = [2, 1, 1]
+            decoder_layers = [200, 100, 50]
+
+            self.ae_model = AutoEncoderNetwork(arch, i_dim, recon_dim, n_filters, strides, decoder_layers)
+            self.ae_model.load_wt(self.sess, AE_MODEL_PATH)
+            
+
+
+        model = rope(num_beads=self.num_beads, 
+                    init_pos=self.init_pos,
+                    texture=self.texture)
+        with model.asfile() as f:
+            mujoco_env.MujocoEnv.__init__(self, f.name, 5)
+
         low = np.asarray(4*[-0.4])
         high = np.asarray(4*[0.4])
         self.action_space = spaces.Box(low=low, high=high, dtype=np.float32)
 
         self.last_reward = False
+
+
         #when using xmls        
         #mujoco_env.MujocoEnv.__init__(self, 'rope.xml', 5)
 
@@ -330,14 +353,49 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         return self._get_obs()
 
     def _get_obs(self):
-        return np.concatenate([
+        if self.obs_mode == 'full_state':
+            obs = np.concatenate([
             self.sim.data.qpos.flat,
             self.sim.data.qvel.flat,
-        ])
+                ])
+
+        elif self.obs_mode == 'meta_feats':
+            img = self.sim.render(self.width, self.height, camera_name="overheadcam")/255.0
+            feats = self.success_pred.get_feats(img)[0]
+
+            obs = np.concatenate([
+                feats,
+                self.sim.data.qpos.flat[:6],
+                self.sim.data.qvel.flat[:6],])
+
+        elif self.obs_mode == 'ae_feats':
+            img = self.sim.render(self.width, self.height, camera_name="overheadcam")/1.0
+
+            feed_dict = {
+                self.ae_model.i : np.expand_dims(img, axis=0),
+                self.ae_model.is_train: False,
+            }
+
+            feats =  self.sess.run(self.ae_model.feats, feed_dict=feed_dict)[0] 
+
+            obs = np.concatenate([
+            feats,
+            self.sim.data.qpos.flat[:6],
+            self.sim.data.qvel.flat[:6],
+            ])
+
+        else:
+            raise NotImplementedError()
+
+        return obs 
 
 if __name__ == "__main__":
-    env = RopeMetaClassifierEnv(texture=True)
-    env.push(np.zeros(4,))
+    # env = RopeMetaClassifierEnv(texture=True, obs_mode='meta_feats')
+    # bla = env.step(np.zeros(4,))
+    
+    env = RopeMetaClassifierEnv(texture=True, obs_mode='ae_feats')
+    bla = env.step(np.zeros(4,))
+    import IPython; IPython.embed()
 
     img = env.sim.render(env.width, env.height, camera_name="overheadcam")/255.0
 

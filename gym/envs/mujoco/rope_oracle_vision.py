@@ -17,11 +17,10 @@ import time
 import os
 import argparse
 
-
 ae_model_name = 'cnn_ae_weights_070000.pkl'
 
 if os.environ.get('NVIDIA_DOCKER') is not None:
-    AE_MODEL_PATH = '/root/code/dsae/models/{}'.format(model_name)
+    AE_MODEL_PATH = '/root/code/dsae/models/{}'.format(ae_model_name)
     IMAGES_DIR = '/rope_data/data/data_rand_act_1/'
 else:
     AE_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/dsae/models/{}'.format(ae_model_name)
