@@ -48,6 +48,7 @@ from gym.envs.mujoco.rope import RopeEnv
 from gym.envs.mujoco.rope_meta_classifier import RopeMetaClassifierEnv
 from gym.envs.mujoco.rope_oracle import RopeOracleEnv
 from gym.envs.mujoco.rope_ae import RopeAEEnv
+from gym.envs.mujoco.rope_in_loop_classifier import RopeClassifierInLoopEnv
 
 #rope stuff from pixels
 from gym.envs.mujoco.rope_oracle_vision import RopeOracleVisionEnv

@@ -17,7 +17,7 @@ import os
 import argparse
 
 if os.environ.get('NVIDIA_DOCKER') is not None:
-    IMAGES_DIR = '/rope_data/data/data_rand_act_1/'
+    IMAGES_DIR = 'root/code/rope_data/data/data_rand_act_1/'
 else:
     IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_rand_act_1/'
 
@@ -62,7 +62,9 @@ class RopeOracleEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                  video_h=500, 
                  video_w=500,
                  camera_name='overheadcam',
-                 action_penalty_const=0.0,):
+                 action_penalty_const=0.0,
+                 data_dir_custom=None,
+                 sparse=False):
         utils.EzPickle.__init__(self)
 
         #sim params
@@ -78,6 +80,7 @@ class RopeOracleEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         #reward params
         self.action_penalty_const = action_penalty_const
         self.success_thresh = success_thresh
+        self.sparse = sparse
 
         #video params
         self.log_video = log_video
@@ -94,7 +97,12 @@ class RopeOracleEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         #load the reference qpos
         task_dir = '{}/task_{}/'.format(IMAGES_DIR, task_id)
-        self.qpos_ref = np.loadtxt(os.path.join(task_dir, 'qpos_original.txt'))
+        filepath = os.path.join(task_dir, 'qpos_original.txt')
+        if os.path.isfile(filepath):
+            self.qpos_ref = np.loadtxt(filepath)
+
+        if data_dir_custom is not None:
+            self.qpos_ref = np.loadtxt(os.path.join(data_dir_custom, 'qpos_original.txt'))
 
         low = np.asarray(4*[-0.4])
         high = np.asarray(4*[0.4])
@@ -109,7 +117,14 @@ class RopeOracleEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         action_penalty = movement_1 + movement_2
 
         distance = calculate_distance(self.qpos_ref, self.sim.data.qpos, self.num_beads)
-        reward = -1.0*distance
+        if not self.sparse:
+            reward = -1.0*distance
+        else:
+            if distance < 0.1:
+                reward = +1.0
+            else:
+                reward = 0.0
+
         reward += action_penalty*self.action_penalty_const
 
         ob = self._get_obs()

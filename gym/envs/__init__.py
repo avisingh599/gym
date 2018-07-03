@@ -278,6 +278,86 @@ register(
     reward_threshold=0.8, #TODO
 )
 
+
+threshs = [0.5, 0.6, 0.8]
+task_ids = list(range(10))
+
+for task_id in task_ids:
+    for thresh in threshs:
+        register(
+            id='RopeClassifierInLoopThresh-{}-{}-v0'.format(thresh, task_id),
+            entry_point='gym.envs.mujoco:RopeClassifierInLoopEnv',
+            max_episode_steps=5,
+            reward_threshold=0.8,
+            kwargs={'reward_mode': 'thresh',
+                    'success_thresh': thresh,
+                    'task_id': task_id }
+        )
+
+for task_id in task_ids:
+    register(
+        id='RopeClassifierInLoopLogits-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeClassifierInLoopEnv',
+        max_episode_steps=5,
+        reward_threshold=0.8,
+        kwargs={ 'reward_mode': 'logits',
+                'task_id': task_id}
+        )
+
+for task_id in task_ids:
+    register(
+        id='RopeClassifierInLoopLogitsFiveShot-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeClassifierInLoopEnv',
+        max_episode_steps=5,
+        reward_threshold=0.8,
+        kwargs={ 'reward_mode': 'logits',
+                'task_id': task_id,
+                'num_success': 5}
+        )
+
+for task_id in task_ids:
+    register(
+        id='RopeClassifierInLoopProbs-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeClassifierInLoopEnv',
+        max_episode_steps=5,
+        reward_threshold=0.8,
+        kwargs={ 'reward_mode': 'probs',
+                'task_id': task_id}
+        )
+
+for task_id in task_ids:
+    register(
+        id='RopeClassifierInLoopPixelDist-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeClassifierInLoopEnv',
+        max_episode_steps=5,
+        reward_threshold=0.8,
+        kwargs={ 'reward_mode': 'pixel_distance',
+                'task_id': task_id}
+        )
+
+for task_id in task_ids:
+    register(
+        id='RopeOracleSingleTask-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeOracleEnv',
+        max_episode_steps=5,
+        reward_threshold=0.8,
+        kwargs={'data_dir_custom' : '/root/code/rope_data/data/data_individual_tasks/task_{}/'.format(task_id),
+                'task_id': task_id}
+        )
+
+for task_id in task_ids:
+    register(
+        id='RopeOracleSingleTaskSparse-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeOracleEnv',
+        max_episode_steps=5,
+        reward_threshold=0.8,
+        kwargs={'data_dir_custom' : '/root/code/rope_data/data/data_individual_tasks/task_{}/'.format(task_id),
+                'task_id': task_id,
+                'sparse': True}
+        )
+
+#/media/avi/data/Work/proj_3/openai-baselines
+
 task_ids = list(range(240, 300))
 threshs = [0.2, 0.4, 0.6, 0.8, 0.85, 0.9, 0.95]
 double_checks = [True, False]
@@ -319,6 +399,8 @@ for task_id in task_ids:
         reward_threshold=0.8,
         kwargs={'task_id' : task_id}
         )
+
+
 
 obs_modes = ['full_state', 'ae_feats']
 for obs_mode in obs_modes:
