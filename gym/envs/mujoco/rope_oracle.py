@@ -16,10 +16,13 @@ import time
 import os
 import argparse
 
+#folder_name = 'data_rand_act_1'
+folder_name = 'data_individual_tasks'
+
 if os.environ.get('NVIDIA_DOCKER') is not None:
-    IMAGES_DIR = 'root/code/rope_data/data/data_rand_act_1/'
+    IMAGES_DIR = os.path.join('/root/code/rope_data/data/', folder_name)
 else:
-    IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_rand_act_1/'
+    IMAGES_DIR = os.path.join('/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/', folder_name)
 
 def get_beads_xy(qpos, num_beads):
     init_joint_offset = 6
@@ -63,12 +66,13 @@ class RopeOracleEnv(mujoco_env.MujocoEnv, utils.EzPickle):
                  video_w=500,
                  camera_name='overheadcam',
                  action_penalty_const=0.0,
-                 data_dir_custom=None,
+                 action_type='push',
                  sparse=False):
         utils.EzPickle.__init__(self)
 
         #sim params
         self.substeps = substeps # number of intermediate positions to generate
+        self.action_type = action_type
 
         #env params
         self.num_beads = num_beads
@@ -98,11 +102,11 @@ class RopeOracleEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         #load the reference qpos
         task_dir = '{}/task_{}/'.format(IMAGES_DIR, task_id)
         filepath = os.path.join(task_dir, 'qpos_original.txt')
-        if os.path.isfile(filepath):
-            self.qpos_ref = np.loadtxt(filepath)
+        #if os.path.isfile(filepath):
+        self.qpos_ref = np.loadtxt(filepath)
 
-        if data_dir_custom is not None:
-            self.qpos_ref = np.loadtxt(os.path.join(data_dir_custom, 'qpos_original.txt'))
+        # if data_dir_custom is not None:
+        #     self.qpos_ref = np.loadtxt(os.path.join(data_dir_custom, 'qpos_original.txt'))
 
         low = np.asarray(4*[-0.4])
         high = np.asarray(4*[0.4])
@@ -110,8 +114,13 @@ class RopeOracleEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
 
     def step(self, a):
+        if self.action_type == 'push':
+            video_frames = self.push(a)
+        elif self.action_type == 'pos':
+            video_frames = self.pos_control(a)
+        else:
+            raise NotImplementedError
 
-        video_frames = self.push(a)
         movement_1 = -1.0*np.linalg.norm(self.sim.data.qpos[:2] - a[:2])
         movement_2 =  -1.0*np.linalg.norm(a[:2] - a[2:])
         action_penalty = movement_1 + movement_2
@@ -173,6 +182,18 @@ class RopeOracleEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         for i in range(actions.shape[0]):
             video_frames.append(self.do_pos_simulation_with_substeps(actions[i]))
 
+        return video_frames
+
+    def pos_control(self, a):
+        torque_neutral = 0.0
+        qpos_curr = self.sim.data.qpos[:self.action_space.shape[0]]
+        action = np.asarray([a[0]+qpos_curr[0], 
+                            a[1]+qpos_curr[1], 
+                            a[2]+qpos_curr[2], 
+                            a[3]+qpos_curr[3], 
+                            torque_neutral])
+
+        video_frames = [self.do_pos_simulation_with_substeps(action)]
         return video_frames
 
     def push(self, a):

@@ -341,8 +341,17 @@ for task_id in task_ids:
         entry_point='gym.envs.mujoco:RopeOracleEnv',
         max_episode_steps=5,
         reward_threshold=0.8,
-        kwargs={'data_dir_custom' : '/root/code/rope_data/data/data_individual_tasks/task_{}/'.format(task_id),
-                'task_id': task_id}
+        kwargs={'task_id': task_id}
+        )
+
+for task_id in task_ids:
+    register(
+        id='RopeOracleSingleTaskPosControl-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeOracleEnv',
+        max_episode_steps=25,
+        reward_threshold=0.8,
+        kwargs={'task_id': task_id,
+                'action_type': 'pos'}
         )
 
 for task_id in task_ids:
@@ -351,8 +360,7 @@ for task_id in task_ids:
         entry_point='gym.envs.mujoco:RopeOracleEnv',
         max_episode_steps=5,
         reward_threshold=0.8,
-        kwargs={'data_dir_custom' : '/root/code/rope_data/data/data_individual_tasks/task_{}/'.format(task_id),
-                'task_id': task_id,
+        kwargs={'task_id': task_id,
                 'sparse': True}
         )
 
