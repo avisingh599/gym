@@ -100,8 +100,8 @@ class RopeOracleEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             mujoco_env.MujocoEnv.__init__(self, f.name, 5)
 
         #load the reference qpos
-        task_dir = '{}/task_{}/'.format(IMAGES_DIR, task_id)
-        filepath = os.path.join(task_dir, 'qpos_original.txt')
+        self.task_dir = '{}/task_{}/'.format(IMAGES_DIR, task_id)
+        filepath = os.path.join(self.task_dir, 'qpos_original.txt')
         #if os.path.isfile(filepath):
         self.qpos_ref = np.loadtxt(filepath)
 

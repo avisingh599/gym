@@ -364,6 +364,17 @@ for task_id in task_ids:
                 'sparse': True}
         )
 
+for task_id in task_ids:
+    register(
+        id='RopeOracleSingleTaskSparsePosControl-{}-v0'.format(task_id),
+        entry_point='gym.envs.mujoco:RopeOracleEnv',
+        max_episode_steps=25,
+        reward_threshold=0.8,
+        kwargs={'task_id': task_id,
+                'action_type': 'pos',
+                'sparse': True}
+        )
+
 #/media/avi/data/Work/proj_3/openai-baselines
 
 task_ids = list(range(240, 300))
