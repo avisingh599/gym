@@ -73,17 +73,32 @@ flags.DEFINE_bool('debug', False, 'debugging mode')
 flags.DEFINE_bool('resnet_feats', False, 'resnet_feats')
 flags.DEFINE_bool('vgg_path', False, 'resnet_feats')
 
-model_name = 'model9000'
+
+## CORL 2018 submission time parameters
+# model_name = 'model9000'
+# ae_model_name = 'cnn_ae_weights_070000.pkl'
+
+# if os.environ.get('NVIDIA_DOCKER') is not None:
+#     AE_MODEL_PATH = '/root/code/dsae/models/{}'.format(ae_model_name)
+#     METACLASSIFIER_MODEL_PATH = '/root/code/rope_models/rope_model_rand_act_1/{}'.format(model_name)
+#     IMAGES_DIR = '/root/code/rope_data/data/data_rand_act_1/'
+# else:
+#     AE_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/dsae/models/{}'.format(ae_model_name)
+#     METACLASSIFIER_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/rope_models/rope_model_rand_act_1/{}'.format(model_name)
+#     IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_rand_act_1/'
+
+## post submission
+model_name = 'model52000'
 ae_model_name = 'cnn_ae_weights_070000.pkl'
 
 if os.environ.get('NVIDIA_DOCKER') is not None:
     AE_MODEL_PATH = '/root/code/dsae/models/{}'.format(ae_model_name)
-    METACLASSIFIER_MODEL_PATH = '/root/code/rope_models/rope_model_rand_act_1/{}'.format(model_name)
-    IMAGES_DIR = '/root/code/rope_data/data/data_rand_act_1/'
+    METACLASSIFIER_MODEL_PATH = '/root/code/rope_models/Aug_02_new_tasks_5_shot_conv_3_16_fc_3_50_color_no_dups/{}'.format(model_name)
+    IMAGES_DIR = '/root/code/rope_data/data/rope_val_08_02/data/validation_tasks/'
 else:
     AE_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/dsae/models/{}'.format(ae_model_name)
-    METACLASSIFIER_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/rope_models/rope_model_rand_act_1/{}'.format(model_name)
-    IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/data_rand_act_1/'
+    METACLASSIFIER_MODEL_PATH = '/media/avi/data/Work/proj_3/openai-baselines/rope_models/Aug_02_new_tasks_5_shot_conv_3_16_fc_3_50_color_no_dups/{}'.format(model_name)
+    IMAGES_DIR = '/media/avi/data/Work/proj_3/openai-baselines/rope_data/data/rope_val_08_02/data/validation_tasks/'
 
 def get_beads_xy(qpos, num_beads):
     init_joint_offset = 6
@@ -116,9 +131,10 @@ def calculate_distance(qpos1, qpos2, num_beads):
 class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self,
                  task_id=0,
+                 reward_mode='thresh',
                  obs_mode='full_state',
                  texture=True,
-                 success_thresh=0.2,
+                 success_thresh=0.5,
                  double_frame_check=False,
                  num_beads=12,
                  init_pos=[0.0, -0.3, 0.0],
@@ -142,6 +158,7 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.height = 128
         self.texture = texture
         self.obs_mode = obs_mode
+        self.reward_mode = reward_mode
 
         #reward params
         self.action_penalty_const = action_penalty_const
@@ -190,7 +207,6 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             self.ae_model.load_wt(self.sess, AE_MODEL_PATH)
             
 
-
         model = rope(num_beads=self.num_beads, 
                     init_pos=self.init_pos,
                     texture=self.texture)
@@ -217,27 +233,38 @@ class RopeMetaClassifierEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         movement_2 =  -1.0*np.linalg.norm(a[:2] - a[2:])
         action_penalty = movement_1 + movement_2
 
-        if self.double_frame_check:
-            if prediction[0,1] > self.success_thresh:
-                if self.last_reward:
+        if self.reward_mode == 'thresh':
+            if self.double_frame_check:
+                if prediction[0,1] > self.success_thresh:
+                    if self.last_reward:
+                        reward = 1.0
+                        is_success_cls = True
+                    else:
+                        reward = 0.0
+                        self.last_reward = True
+                        is_success_cls = False
+                else:
+                    reward = 0.0
+                    self.last_reward = False
+                    is_success_cls = False
+            else:
+                if prediction[0,1] > self.success_thresh:
                     reward = 1.0
                     is_success_cls = True
                 else:
                     reward = 0.0
-                    self.last_reward = True
                     is_success_cls = False
-            else:
-                reward = 0.0
-                self.last_reward = False
-                is_success_cls = False
-        else:
+        
+        elif self.reward_mode == 'logprobs':
+            prediction[prediction > 0.98] = 1.0  
+            reward = np.log(prediction[0,1])
             if prediction[0,1] > self.success_thresh:
-                reward = 1.0
                 is_success_cls = True
             else:
-                reward = 0.0
                 is_success_cls = False
-
+        else:
+            raise NotImplementedError
+        
         reward += action_penalty*self.action_penalty_const
 
         ob = self._get_obs()

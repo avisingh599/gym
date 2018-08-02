@@ -2,6 +2,14 @@ from gym.envs.mujoco.dynamic_mjc.model_builder import MJCModel
 import numpy as np
 import os
 
+np.random.seed(0)
+
+COLORS = ["0.5 0.5 0.5 1", 
+          "0.0 0.0 0.0 1",
+          "0.0 0.5 0.0 1",
+          "0.5 0.0 0.5 1",
+          "0.0 0.0 0.5 1"]
+
 def rope(num_beads = 5, 
     init_pos=[0.0, 0.0, 0.0],
     texture=False,
@@ -23,7 +31,7 @@ def rope(num_beads = 5,
 
     worldbody.camera(name="maincam", mode="fixed", fovy="32", euler="0.7 0 0", pos="0 -1.1 1.3")
     worldbody.camera(name="leftcam", mode="fixed", fovy="32", euler="0.7 0 -1.57", pos="-1.1 0 1.3")
-    worldbody.camera(name="overheadcam", mode= "fixed", pos="0. 0. 1.3", euler="0.0 0.0 0.0")
+    worldbody.camera(name="overheadcam", mode= "fixed", pos="0. 0. 1.5", euler="0.0 0.0 0.0")
 
     gripper = worldbody.body(name="gripper", pos=[0,0,0.25])
 
@@ -54,15 +62,21 @@ def rope(num_beads = 5,
     site_pos = [0.0, 0.0, 0.0] #for spherical beads
     tendon_range = [0.0, 0.07]
 
+    color = np.random.choice(COLORS)
+    # color = "0.5 0.5 0.5 1"
+
     beads = []
     for i in range(num_beads):
         new_pos = list(np.asarray(init_pos) + i*(np.asarray(displacement)))
         beads.append(worldbody.body(name="bead_{}".format(i), pos=new_pos))
         beads[i].joint(type="free")
         if texture:
-            beads[i].geom(type="sphere", size="0.03", rgba="0.5 0.5 0.5 1", 
+            beads[i].geom(type="sphere", size="0.03", rgba=color, 
                   mass="0.03", contype="7", conaffinity="7", friction="1.0 0.10 0.002",
                   condim="6", solimp="0.99 0.99 0.01", solref="0.01 1", material="bead_material")
+            # beads[i].geom(type="sphere", size="0.03", rgba="0.5 0.5 0.5 1", 
+            #       mass="0.03", contype="7", conaffinity="7", friction="1.0 0.10 0.002",
+            #       condim="6", solimp="0.99 0.99 0.01", solref="0.01 1", material="bead_material")
         else:
             beads[i].geom(type="sphere", size="0.03", rgba="0.8 0.2 0.2 1", 
                   mass="0.03", contype="7", conaffinity="7", friction="1.0 0.10 0.002",
